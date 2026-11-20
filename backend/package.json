@@ -1,0 +1,31 @@
+{
+  "name": "ruralhealth-sync-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "RuralHealth Sync API: authentication, synchronization engine, conflict resolution, outbox to Kafka",
+  "main": "src/server.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "migrate": "node src/database/migrate.js",
+    "seed": "node src/database/seed.js --force",
+    "test": "node --test tests/sync.test.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "etcd3": "^1.1.2",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "kafkajs": "^2.2.4",
+    "minio": "^8.0.2",
+    "morgan": "^1.10.0",
+    "pg": "^8.13.1",
+    "prom-client": "^15.1.3"
+  }
+}

@@ -1,0 +1,25 @@
+# One-click deployment on Render (render.com → New → Blueprint → pick this repo).
+# Runs the API and serves the built React app from the same URL.
+# Kafka, Spark, etcd and MinIO are not used in this cloud version; the app falls
+# back to the outbox table, live SQL analytics and local file storage.
+services:
+  - type: web
+    name: ruralhealth-sync
+    runtime: node
+    plan: free
+    buildCommand: cd frontend && npm ci && npm run build && cd ../backend && npm ci --omit=dev
+    startCommand: cd backend && node src/server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false          # paste your PostgreSQL connection string (e.g. from Neon)
+      - key: DATABASE_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: SEED_DEMO_DATA
+        value: "true"
+      - key: GOOGLE_CLIENT_ID
+        sync: false          # optional

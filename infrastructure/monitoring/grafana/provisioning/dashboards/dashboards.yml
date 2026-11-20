@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: RuralHealth
+    folder: RuralHealth Sync
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

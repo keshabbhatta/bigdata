@@ -1,0 +1,250 @@
+# RuralHealth Sync — full distributed stack.
+#
+# Layers (start only what your laptop can handle):
+#
+#   docker compose up -d --build                      core: 2x PostgreSQL (primary + replica),
+#                                                     3x etcd (Raft), 2x Node API, nginx load
+#                                                     balancer + web app, MinIO      (~1 GB RAM)
+#   docker compose --profile bigdata up -d            + Kafka + Spark master/worker + streaming job
+#                                                     (~2.5 GB more RAM)
+#   docker compose --profile monitoring up -d         + Prometheus + Grafana
+#   docker compose run --rm spark-batch               run the nightly Spark batch job once
+#
+# Open the app at http://localhost:8088
+
+name: ruralhealth
+
+# Three etcd nodes form a Raft cluster: it keeps working if any ONE node fails
+# (a majority of 2 out of 3 is still available).
+x-etcd-env: &etcd-env
+  ETCD_INITIAL_CLUSTER: etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380
+  ETCD_INITIAL_CLUSTER_STATE: new
+  ETCD_INITIAL_CLUSTER_TOKEN: ruralhealth-etcd
+  ETCD_LISTEN_CLIENT_URLS: http://0.0.0.0:2379
+  ETCD_LISTEN_PEER_URLS: http://0.0.0.0:2380
+  ETCD_DATA_DIR: /etcd-data
+
+x-api: &api
+  build:
+    context: ..
+    dockerfile: backend/Dockerfile
+  restart: unless-stopped
+  depends_on: [postgres-primary, etcd1, etcd2, etcd3]
+  environment: &api-env
+    PORT: 4000
+    JWT_SECRET: ${JWT_SECRET:-change-me-in-production-please}
+    DATABASE_URL: postgres://ruralhealth:${POSTGRES_PASSWORD:-ruralhealth}@postgres-primary:5432/ruralhealth
+    DATABASE_REPLICA_URL: postgres://ruralhealth:${POSTGRES_PASSWORD:-ruralhealth}@postgres-replica:5432/ruralhealth
+    ETCD_HOSTS: etcd1:2379,etcd2:2379,etcd3:2379
+    KAFKA_BROKERS: kafka:9092
+    KAFKA_REPLICATION_FACTOR: ${KAFKA_REPLICATION_FACTOR:-1}
+    MINIO_ENDPOINT: minio
+    MINIO_PORT: 9000
+    MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+    MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    AUTO_FAILOVER: "true"
+    GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    SEED_DEMO_DATA: "true"
+    SERVE_FRONTEND: "false"
+
+x-spark: &spark
+  image: apache/spark:3.5.7-python3
+  profiles: [bigdata]
+  user: root
+  environment: &spark-env
+    SPARK_NO_DAEMONIZE: "true"
+    PG_URL: jdbc:postgresql://postgres-primary:5432/ruralhealth
+    PG_READ_URL: jdbc:postgresql://postgres-replica:5432/ruralhealth
+    PG_USER: ruralhealth
+    PG_PASSWORD: ${POSTGRES_PASSWORD:-ruralhealth}
+    KAFKA_BOOTSTRAP: kafka:9092
+
+services:
+  # ---------------------------------------------------------------- storage
+  postgres-primary:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ruralhealth
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ruralhealth}
+      POSTGRES_DB: ruralhealth
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:-replicator}
+    command: >
+      postgres -c wal_level=replica -c max_wal_senders=10 -c max_replication_slots=10
+               -c hot_standby=on -c wal_keep_size=256MB
+    volumes:
+      - pg-primary:/var/lib/postgresql/data
+      - ./postgres/primary-init.sh:/docker-entrypoint-initdb.d/10-replication.sh:ro
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ruralhealth -d ruralhealth"]
+      interval: 5s
+      retries: 20
+
+  postgres-replica:
+    image: postgres:16
+    restart: unless-stopped
+    depends_on:
+      postgres-primary: { condition: service_healthy }
+    environment:
+      POSTGRES_USER: ruralhealth
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ruralhealth}
+      PRIMARY_HOST: postgres-primary
+      REPLICATION_PASSWORD: ${REPLICATION_PASSWORD:-replicator}
+    entrypoint: ["bash", "/replica-entrypoint.sh"]
+    volumes:
+      - pg-replica:/var/lib/postgresql/data
+      - ./postgres/replica-entrypoint.sh:/replica-entrypoint.sh:ro
+    ports: ["5433:5432"]
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes: [minio-data:/data]
+    ports: ["9000:9000", "9001:9001"]
+
+  # ---------------------------------------------------------- coordination
+  etcd1:
+    image: quay.io/coreos/etcd:v3.5.17
+    restart: unless-stopped
+    ports: ["2379:2379"]
+    environment:
+      <<: *etcd-env
+      ETCD_NAME: etcd1
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd1:2379
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd1:2380
+  etcd2:
+    image: quay.io/coreos/etcd:v3.5.17
+    restart: unless-stopped
+    environment:
+      <<: *etcd-env
+      ETCD_NAME: etcd2
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd2:2379
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd2:2380
+  etcd3:
+    image: quay.io/coreos/etcd:v3.5.17
+    restart: unless-stopped
+    environment:
+      <<: *etcd-env
+      ETCD_NAME: etcd3
+      ETCD_ADVERTISE_CLIENT_URLS: http://etcd3:2379
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: http://etcd3:2380
+
+  # ------------------------------------------------------------ application
+  api-1:
+    <<: *api
+    environment:
+      <<: *api-env
+      INSTANCE_ID: api-1
+  api-2:
+    <<: *api
+    environment:
+      <<: *api-env
+      INSTANCE_ID: api-2
+
+  web:
+    build:
+      context: ..
+      dockerfile: infrastructure/nginx/Dockerfile
+    restart: unless-stopped
+    depends_on: [api-1, api-2]
+    ports: ["8088:80"]
+
+  # ------------------------------------------------- big data (profile: bigdata)
+  kafka:
+    image: apache/kafka:3.9.1
+    profiles: [bigdata]
+    restart: unless-stopped
+    environment:
+      CLUSTER_ID: 4L6g3nShT-eMCtK--X86sw
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_HEAP_OPTS: -Xmx384m -Xms384m
+    volumes: [kafka-data:/var/lib/kafka/data]
+    ports: ["29092:29092"]
+
+  spark-master:
+    <<: *spark
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+    ports: ["8080:8080", "7077:7077"]
+
+  spark-worker:
+    <<: *spark
+    depends_on: [spark-master]
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      <<: *spark-env
+      SPARK_WORKER_MEMORY: 1g
+      SPARK_WORKER_CORES: "2"
+    ports: ["8081:8081"]
+
+  spark-streaming:
+    <<: *spark
+    restart: unless-stopped
+    depends_on: [spark-master, spark-worker, kafka]
+    command: >
+      /opt/spark/bin/spark-submit --master spark://spark-master:7077
+      --conf spark.jars.ivy=/opt/ivy --conf spark.driver.host=spark-streaming
+      --conf spark.executor.memory=512m --conf spark.cores.max=1
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.7,org.postgresql:postgresql:42.7.4
+      /opt/jobs/streaming/stream_events.py
+    volumes:
+      - ../analytics:/opt/jobs:ro
+      - spark-ivy:/opt/ivy
+      - spark-checkpoints:/tmp/checkpoints
+
+  spark-batch:
+    <<: *spark
+    profiles: [batch]
+    command: >
+      /opt/spark/bin/spark-submit --master local[2]
+      --conf spark.jars.ivy=/opt/ivy --driver-memory 1g
+      --packages org.postgresql:postgresql:42.7.4
+      /opt/jobs/batch/nightly_batch.py
+    volumes:
+      - ../analytics:/opt/jobs:ro
+      - spark-ivy:/opt/ivy
+
+  # ------------------------------------------- monitoring (profile: monitoring)
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles: [monitoring]
+    volumes: [./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro]
+    ports: ["9090:9090"]
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    profiles: [monitoring]
+    depends_on: [prometheus]
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["3000:3000"]
+
+volumes:
+  pg-primary:
+  pg-replica:
+  minio-data:
+  kafka-data:
+  spark-ivy:
+  spark-checkpoints:

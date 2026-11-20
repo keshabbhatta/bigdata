@@ -1,0 +1,10 @@
+{
+  "name": "@ruralhealth/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Shared data model and sync logic used by frontend and backend",
+  "scripts": {
+    "test": "node --test tests/core.test.js"
+  }
+}
