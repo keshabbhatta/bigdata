@@ -9,7 +9,7 @@ import { useAuth, isStaff, ROLE_NAMES } from '../context/AuthContext.jsx';
 import { useSync } from '../context/SyncContext.jsx';
 import { SignalRibbon } from './SignalRibbon.jsx';
 import { cx } from './ui.jsx';
-import { wardName, relativeTime } from '../utils/format.js';
+import { wardName, relativeTime, nameParts } from '../utils/format.js';
 
 const BARS = { real: 4, '3g': 3, '2g': 2, flaky: 1, offline: 0 };
 
@@ -74,13 +74,13 @@ function UserMenu() {
     document.addEventListener('keydown', esc);
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc); };
   }, [open]);
-  const initials = user.name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+  const { initials, short } = nameParts(user.name);
   return (
     <div className="relative" ref={ref}>
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="menu"
         className="flex h-9 cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-white/10 py-0 pr-2.5 pl-0.5 text-white transition-colors hover:bg-white/20">
         <span className="grid size-8 place-items-center rounded-full bg-marigold text-[13px] font-bold text-ink">{initials}</span>
-        <span className="hidden max-w-[140px] truncate text-sm font-semibold md:inline">{user.name.split(' ')[0]}</span>
+        <span className="hidden max-w-[140px] truncate text-sm font-semibold md:inline">{short}</span>
         <ChevronDown size={15} className={cx('transition-transform duration-200', open && 'rotate-180')} />
       </button>
       {open && (

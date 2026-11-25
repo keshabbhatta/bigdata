@@ -34,6 +34,8 @@ export const config = {
   },
 
   autoFailover: process.env.AUTO_FAILOVER === 'true',
+  // Self-registered accounts with these roles can sign in without approval.
+  autoApproveRoles: list(process.env.AUTO_APPROVE_ROLES ?? 'worker'),
   seedDemoData: process.env.SEED_DEMO_DATA !== 'false',
   serveFrontend: process.env.SERVE_FRONTEND !== 'false',
 };

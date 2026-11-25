@@ -285,7 +285,10 @@ export function Home() {
               <a key={href} href={href} className="rounded-full px-3.5 py-2 text-white/75 no-underline transition-colors hover:bg-white/10 hover:text-white">{l}</a>
             ))}
           </nav>
-          <Button as={Link} to={cta.to} variant="accent" size="sm" className="ml-auto h-9 px-4">{session ? 'Open the app' : 'Sign in'}</Button>
+          <div className="ml-auto flex items-center gap-2">
+            {!session && <Button as={Link} to="/login?mode=signup" variant="glass" size="sm" className="h-9 px-4">Create account</Button>}
+            <Button as={Link} to={cta.to} variant="accent" size="sm" className="h-9 px-4">{session ? 'Open the app' : 'Sign in'}</Button>
+          </div>
         </div>
       </header>
 
@@ -478,6 +481,7 @@ export function Home() {
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button as={Link} to={cta.to} variant="accent" className="h-12 px-7 text-base">{cta.label}</Button>
+              {!session && <Button as={Link} to="/login?mode=signup" variant="glass" className="h-12 px-7 text-base">Create an account</Button>}
             </div>
           </div>
         </Reveal>

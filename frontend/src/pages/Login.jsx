@@ -1,16 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { Footprints, Stethoscope, HeartPulse, Eye, EyeOff, WifiOff } from 'lucide-react';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import { Footprints, Stethoscope, HeartPulse, Eye, EyeOff, WifiOff, Check, Circle, MailCheck } from 'lucide-react';
 import { useAuth, ROLE_TABS } from '../context/AuthContext.jsx';
 import { api } from '../services/api.js';
 import { VillageScene } from '../components/VillageScene.jsx';
-import { Button, Field, Input, cx } from '../components/ui.jsx';
+import { Button, Field, Input, Segmented, Select, cx } from '../components/ui.jsx';
+import { passwordChecks, passwordProblems, isEmailFormat } from '../../../shared/accounts.js';
+import { WARDS } from '../../../shared/schema.js';
 
 const TABS = [
   { id: 'worker', icon: Footprints, blurb: 'Register households and record visits in the field, even with no signal.' },
   { id: 'doctor', icon: Stethoscope, blurb: 'Review high-risk pregnancies, resolve conflicting readings and watch the system.' },
   { id: 'patient', icon: HeartPulse, blurb: 'See your pregnancy progress, your readings and the date of your next check-up.' },
 ];
+
+const SIGNUP_NOTE = {
+  worker: 'Health worker accounts can sign in right away and see the ward you choose.',
+  doctor: 'Doctor accounts can see every ward, so an administrator approves them before the first sign-in.',
+  patient: 'Your health post links the account to your health record. You can sign in after that.',
+};
 
 const DEMO = {
   worker: [
@@ -36,9 +44,23 @@ function GoogleIcon() {
   );
 }
 
+function PasswordInput({ id, value, onChange, autoComplete }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <Input id={id} type={show ? 'text' : 'password'} value={value} onChange={onChange} autoComplete={autoComplete} required className="pr-11" />
+      <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'}
+        className="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded text-ink-soft hover:text-ink">
+        {show ? <EyeOff size={17} /> : <Eye size={17} />}
+      </button>
+    </div>
+  );
+}
+
 // Google Identity Services. The official button is rendered only when the
-// server has a Google client ID configured (GOOGLE_CLIENT_ID).
-function GoogleSignIn({ tab, onError, onBusy }) {
+// server has a Google client ID configured (GOOGLE_CLIENT_ID). On the
+// "Create an account" screen it also creates the account (signupRef gives the ward).
+function GoogleSignIn({ tab, signupRef, onError, onBusy, onPending }) {
   const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const holder = useRef(null);
@@ -62,7 +84,11 @@ function GoogleSignIn({ tab, onError, onBusy }) {
         client_id: clientId,
         callback: async ({ credential }) => {
           onBusy(true);
-          try { await loginWithGoogle(credential, tabRef.current); navigate('/', { replace: true }); } catch (e) { onError(e.message); } finally { onBusy(false); }
+          onError('');
+          try {
+            const r = await loginWithGoogle(credential, tabRef.current, signupRef.current?.());
+            if (r.pending) onPending(r.message); else navigate('/', { replace: true });
+          } catch (e) { onError(e.message); } finally { onBusy(false); }
         },
       });
       window.google.accounts.id.renderButton(holder.current, { theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular', width: holder.current.offsetWidth || 360 });
@@ -79,7 +105,7 @@ function GoogleSignIn({ tab, onError, onBusy }) {
   if (clientId) return <div><div ref={holder} className="min-h-[44px] w-full" />{note && <p className="mt-2 text-[13px] text-ink-soft">{note}</p>}</div>;
   return (
     <div>
-      <button type="button" onClick={() => setNote('Google sign-in is not set up on this server yet. Use your username and password.')}
+      <button type="button" onClick={() => setNote('Google sign-in is not set up on this server yet (GOOGLE_CLIENT_ID is empty). Use your email and password.')}
         className="flex h-11 w-full cursor-pointer items-center justify-center gap-2.5 rounded-md border border-line bg-white font-semibold text-ink hover:border-ink-soft">
         <GoogleIcon /> Continue with Google
       </button>
@@ -88,32 +114,147 @@ function GoogleSignIn({ tab, onError, onBusy }) {
   );
 }
 
-export function Login() {
-  const { session, login } = useAuth();
+function SignInForm({ tab, onError, error }) {
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState(() => (ROLE_TABS[localStorage.getItem('rh.loginTab')] ? localStorage.getItem('rh.loginTab') : 'worker'));
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [show, setShow] = useState(false);
-  const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
 
-  if (session && !session.expired) return <Navigate to="/" replace />;
-
-  const chooseTab = (id) => { setTab(id); setError(''); localStorage.setItem('rh.loginTab', id); };
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
-    setError('');
+    onError('');
     try {
       await login(username, password, tab);
       navigate('/', { replace: true });
     } catch (err) {
-      setError(err.message);
+      onError(err.message);
     } finally {
       setBusy(false);
     }
+  };
+
+  return (
+    <>
+      <form onSubmit={submit} className="mt-4 flex flex-col gap-4">
+        <Field label="Email or username">
+          <Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" inputMode="email" required />
+        </Field>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="login-password" className="text-[13px] font-semibold text-ink-2">Password</label>
+          <PasswordInput id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+        </div>
+        {error && <div role="alert" className="rounded-md bg-lali-wash px-3.5 py-2.5 text-sm text-lali-deep">{error}</div>}
+        <Button type="submit" disabled={busy} className="h-[46px]">{busy ? 'Signing in…' : 'Sign in'}</Button>
+      </form>
+      <DemoAccounts tab={tab} onPick={(u, p) => { setUsername(u); setPassword(p); onError(''); }} />
+    </>
+  );
+}
+
+function DemoAccounts({ tab, onPick }) {
+  return (
+    <div className="mt-7 border-t border-line pt-4">
+      <p className="text-sm text-ink-soft">Demo accounts with synthetic data. Tap one to fill the form.</p>
+      <div className="mt-2.5 grid grid-cols-2 gap-2">
+        {DEMO[tab].map((d) => (
+          <button key={d.u} type="button" onClick={() => onPick(d.u, d.p)}
+            className="cursor-pointer rounded-md border border-line bg-white px-3 py-2 text-left transition-colors hover:border-pine">
+            <b className="block text-sm">{d.who}</b>
+            <span className="text-xs text-ink-soft">{d.role}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SignUpForm({ tab, signupRef, onPending, onError, error }) {
+  const { register } = useAuth();
+  const navigate = useNavigate();
+  const [f, setF] = useState({ fullName: '', email: '', password: '', confirm: '', ward: WARDS[0].id });
+  const [busy, setBusy] = useState(false);
+  const needsWard = tab !== 'doctor';
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  const checks = passwordChecks(f.password);
+  // Google sign-up on this screen uses the ward chosen here.
+  signupRef.current = () => ({ ward: needsWard ? f.ward : undefined });
+
+  const submit = async (e) => {
+    e.preventDefault();
+    onError('');
+    if (f.fullName.trim().length < 2) return onError('Enter your full name.');
+    if (!isEmailFormat(f.email)) return onError('Enter a valid email address, for example name@gmail.com.');
+    const problems = passwordProblems(f.password);
+    if (problems.length) return onError(problems[0]);
+    if (f.password !== f.confirm) return onError('The two passwords do not match.');
+    setBusy(true);
+    try {
+      const r = await register({ fullName: f.fullName.trim(), email: f.email.trim(), password: f.password, ward: needsWard ? f.ward : undefined }, tab);
+      if (r.pending) onPending(r.message); else navigate('/', { replace: true });
+    } catch (err) {
+      onError(err.offline ? 'Creating an account needs an internet connection.' : err.message);
+    } finally {
+      setBusy(false);
+    }
+    return undefined;
+  };
+
+  return (
+    <form onSubmit={submit} className="mt-4 flex flex-col gap-4" noValidate>
+      <Field label="Full name">
+        <Input value={f.fullName} onChange={set('fullName')} autoComplete="name" required />
+      </Field>
+      <Field label="Email" note="Use a real address you can receive mail at. Fake or misspelled domains are rejected.">
+        <Input type="email" value={f.email} onChange={set('email')} autoComplete="email" autoCapitalize="none" inputMode="email" required />
+      </Field>
+      {needsWard && (
+        <Field label={tab === 'patient' ? 'Your ward (health post area)' : 'Your ward'}>
+          <Select value={f.ward} onChange={set('ward')}>
+            {WARDS.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+          </Select>
+        </Field>
+      )}
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor="signup-password" className="text-[13px] font-semibold text-ink-2">Password</label>
+        <PasswordInput id="signup-password" value={f.password} onChange={set('password')} autoComplete="new-password" />
+        <ul className="mt-1 grid grid-cols-1 gap-x-3 gap-y-0.5 text-[13px] sm:grid-cols-2" aria-label="Password rules">
+          {checks.map((c) => (
+            <li key={c.label} className={cx('flex items-center gap-1.5', c.ok ? 'text-pine' : 'text-ink-soft')}>
+              {c.ok ? <Check size={14} /> : <Circle size={10} className="mx-0.5" />} {c.label}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <Field label="Repeat password">
+        <PasswordInput id="signup-confirm" value={f.confirm} onChange={set('confirm')} autoComplete="new-password" />
+      </Field>
+      <p className="text-[13px] text-ink-soft">{SIGNUP_NOTE[tab]}</p>
+      {error && <div role="alert" className="rounded-md bg-lali-wash px-3.5 py-2.5 text-sm text-lali-deep">{error}</div>}
+      <Button type="submit" disabled={busy} className="h-[46px]">{busy ? 'Creating account…' : 'Create account'}</Button>
+    </form>
+  );
+}
+
+export function Login() {
+  const { session } = useAuth();
+  const [tab, setTab] = useState(() => (ROLE_TABS[localStorage.getItem('rh.loginTab')] ? localStorage.getItem('rh.loginTab') : 'worker'));
+  const [params, setParams] = useSearchParams();
+  const [mode, setMode] = useState(() => (params.get('mode') === 'signup' ? 'signup' : 'signin'));
+  const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [, setBusy] = useState(false);
+  const signupRef = useRef(null);
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  if (mode === 'signin') signupRef.current = null;
+
+  if (session && !session.expired) return <Navigate to="/" replace />;
+
+  const chooseTab = (id) => { setTab(id); setError(''); setNotice(''); localStorage.setItem('rh.loginTab', id); };
+  const switchMode = (m) => {
+    setMode(m); setError(''); setNotice('');
+    setParams(m === 'signup' ? { mode: 'signup' } : {}, { replace: true });
   };
   const active = TABS.find((t) => t.id === tab) || TABS[0];
 
@@ -138,7 +279,14 @@ export function Login() {
       </div>
 
       <div className="mx-auto flex w-full max-w-[480px] animate-rise flex-col justify-center px-6 py-8 md:p-12">
-        <h2 className="font-condensed text-[30px] font-semibold">Sign in</h2>
+        <div className="mb-5">
+          <Segmented label="Sign in or create an account" value={mode} onChange={switchMode}
+            options={[{ value: 'signin', label: 'I have an account' }, { value: 'signup', label: 'I am new here' }]} />
+        </div>
+        <h2 className="font-condensed text-[30px] font-semibold">{mode === 'signin' ? 'Sign in' : 'Create an account'}</h2>
+        <p className="mt-1 text-sm text-ink-soft">
+          {mode === 'signin' ? 'Welcome back. Sign in with your email or username.' : 'New to RuralHealth Sync? Choose who you are, then fill in your details.'}
+        </p>
 
         <div role="tablist" aria-label="I am a" className="mt-5 grid grid-cols-3 gap-1 rounded-[10px] bg-line-soft p-1">
           {TABS.map((t) => (
@@ -154,45 +302,39 @@ export function Login() {
 
         {offline && (
           <div className="mt-2 flex items-start gap-2 rounded-md bg-marigold-wash px-3 py-2.5 text-sm text-marigold-deep">
-            <WifiOff size={16} className="mt-0.5 flex-none" /> You are offline. You can sign in with an account that has signed in on this phone before.
+            <WifiOff size={16} className="mt-0.5 flex-none" />
+            {mode === 'signin'
+              ? 'You are offline. You can sign in with an account that has signed in on this phone before.'
+              : 'You are offline. Creating an account needs an internet connection.'}
           </div>
         )}
 
-        <form onSubmit={submit} className="mt-4 flex flex-col gap-4">
-          <Field label={tab === 'patient' ? 'Username from your health post' : 'Username'}>
-            <Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" required />
-          </Field>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="login-password" className="text-[13px] font-semibold text-ink-2">Password</label>
-            <div className="relative">
-              <Input id="login-password" type={show ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required className="pr-11" />
-              <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'}
-                className="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded text-ink-soft hover:text-ink">
-                {show ? <EyeOff size={17} /> : <Eye size={17} />}
-              </button>
+        {notice ? (
+          <div role="status" className="mt-4 rounded-xl border border-pine/30 bg-pine-wash px-4 py-4 text-sm text-pine-deep">
+            <div className="flex items-center gap-2 font-semibold"><MailCheck size={18} /> Almost done</div>
+            <p className="mt-1.5">{notice}</p>
+            <Button variant="ghost" size="sm" className="mt-3" onClick={() => switchMode('signin')}>Back to sign in</Button>
+          </div>
+        ) : (
+          <>
+            {mode === 'signin'
+              ? <SignInForm key={tab} tab={tab} error={error} onError={setError} />
+              : <SignUpForm key={tab} tab={tab} signupRef={signupRef} error={error} onError={setError} onPending={setNotice} />}
+
+            <div className="my-5 flex items-center gap-3 text-[13px] text-ink-soft">
+              <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
             </div>
-          </div>
-          {error && <div role="alert" className="rounded-md bg-lali-wash px-3.5 py-2.5 text-sm text-lali-deep">{error}</div>}
-          <Button type="submit" disabled={busy} className="h-[46px]">{busy ? 'Signing in…' : 'Sign in'}</Button>
-        </form>
+            <GoogleSignIn tab={tab} signupRef={signupRef} onError={setError} onBusy={setBusy} onPending={setNotice} />
 
-        <div className="my-5 flex items-center gap-3 text-[13px] text-ink-soft">
-          <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
-        </div>
-        <GoogleSignIn tab={tab} onError={setError} onBusy={setBusy} />
-
-        <div className="mt-7 border-t border-line pt-4">
-          <p className="text-sm text-ink-soft">Demo accounts with synthetic data. Tap one to fill the form.</p>
-          <div className="mt-2.5 grid grid-cols-2 gap-2">
-            {DEMO[tab].map((d) => (
-              <button key={d.u} type="button" onClick={() => { setUsername(d.u); setPassword(d.p); setError(''); }}
-                className="cursor-pointer rounded-md border border-line bg-white px-3 py-2 text-left transition-colors hover:border-pine">
-                <b className="block text-sm">{d.who}</b>
-                <span className="text-xs text-ink-soft">{d.role}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+            <p className="mt-5 text-center text-sm text-ink-soft">
+              {mode === 'signin' ? (
+                <>New here? <button type="button" onClick={() => switchMode('signup')} className="cursor-pointer font-semibold text-pine underline-offset-2 hover:underline">Create an account</button></>
+              ) : (
+                <>Already have an account? <button type="button" onClick={() => switchMode('signin')} className="cursor-pointer font-semibold text-pine underline-offset-2 hover:underline">Sign in</button></>
+              )}
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

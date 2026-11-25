@@ -61,7 +61,8 @@ export async function request(path, { method, body, compress = false, auth = tru
 
 export const api = {
   login: (username, password) => request('/auth/login', { body: { username, password, deviceId }, auth: false }),
-  googleLogin: (credential) => request('/auth/google', { body: { credential }, auth: false }),
+  googleLogin: (credential, signup) => request('/auth/google', { body: { credential, signup }, auth: false }),
+  register: (form) => request('/auth/register', { body: form, auth: false }),
   authConfig: () => request('/auth/config', { auth: false }),
   push: (events) => request('/sync/push', { body: { events }, compress: true }),
   pull: (since, limit = 300) => request('/sync/pull', { body: { since, limit } }),
@@ -72,6 +73,10 @@ export const api = {
   adminOverview: () => request('/admin/overview'),
   audit: () => request('/admin/audit?limit=60'),
   addUser: (u) => request('/admin/users', { body: u }),
+  approveUser: (id, patientId) => request(`/admin/users/${id}/approve`, { body: { patientId } }),
+  rejectUser: (id) => request(`/admin/users/${id}`, { method: 'DELETE' }),
+  updateUser: (id, changes) => request(`/admin/users/${id}`, { method: 'PATCH', body: changes }),
+  resetPassword: (id, password) => request(`/admin/users/${id}/password`, { body: { password } }),
   setSyncMode: (mode) => request('/admin/sync-mode', { body: { mode } }),
   backup: () => request('/admin/backup', { body: {} }),
   backups: () => request('/admin/backups'),
