@@ -7,6 +7,97 @@ import { useSync } from '../context/SyncContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { Badge, Button, Drawer, Empty, Field, Input, PageHead, Panel, PanelHead, Segmented, Select, Table, cx } from '../components/ui.jsx';
 import { bytes, formatDateTime, relativeTime, wardName } from '../utils/format.js';
+import { passwordChecks } from '../../../shared/accounts.js';
+
+const ALL_WARDS = ['ward-1', 'ward-2', 'ward-3'];
+
+/** Admin edits any account: details, role, wards, patient link, on/off, password. */
+function ManageUser({ account: u, me, onClose, onSaved }) {
+  const patients = usePatients() || [];
+  const toast = useToast();
+  const [f, setF] = useState({
+    fullName: u.full_name, email: u.email || '', role: u.role, wards: u.wards || [], patientId: u.patient_id || '', active: u.active,
+  });
+  const [pw, setPw] = useState('');
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const self = u.id === me.id;
+  const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+
+  const save = async () => {
+    setError('');
+    setBusy(true);
+    try {
+      const changes = { fullName: f.fullName, email: f.email, role: f.role, active: f.active };
+      if (f.role === 'patient') changes.patientId = f.patientId;
+      else changes.wards = f.wards;
+      await api.updateUser(u.id, changes);
+      if (pw) await api.resetPassword(u.id, pw);
+      toast(`${f.fullName} saved.`);
+      onSaved();
+      onClose();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Drawer title={`Manage ${u.full_name}`} onClose={onClose}
+      footer={<><Button variant="ghost" onClick={onClose}>Cancel</Button><Button onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save changes'}</Button></>}>
+      <div className="flex flex-col gap-3.5">
+        {error && <div role="alert" className="rounded-md bg-lali-wash px-3.5 py-2.5 text-sm text-lali-deep">{error}</div>}
+        <p className="text-[13px] text-ink-soft">
+          Username <b className="text-ink">{u.username}</b>, created {formatDateTime(u.created_at)}
+          {u.auth_provider === 'google' ? ', signs in with Google' : ''}.
+        </p>
+        <Field label="Account status" note={self ? 'You cannot switch off your own account.' : 'A switched-off account is signed out within seconds. Its records stay.'}>
+          <Segmented label="Account status" value={f.active ? 'on' : 'off'} onChange={(v) => !self && setF({ ...f, active: v === 'on' })}
+            options={[{ value: 'on', label: 'Active' }, { value: 'off', label: 'Switched off' }]} />
+        </Field>
+        <Field label="Full name"><Input value={f.fullName} onChange={set('fullName')} /></Field>
+        <Field label="Email" note="The person can sign in with this email. Google sign-in matches it too.">
+          <Input type="email" value={f.email} onChange={set('email')} autoCapitalize="none" />
+        </Field>
+        <Field label="Role">
+          <Select value={f.role} onChange={set('role')} disabled={self}>
+            <option value="worker">Health volunteer</option><option value="supervisor">Doctor / supervisor</option>
+            <option value="admin">Administrator</option><option value="patient">Patient</option>
+          </Select>
+        </Field>
+        {f.role === 'patient' ? (
+          <Field label="Patient record" note="The patient sees only this record, read-only.">
+            <Select value={f.patientId} onChange={set('patientId')}>
+              <option value="">Choose a patient…</option>
+              {patients.map((p) => <option key={p.id} value={p.id}>{p.data.name}, {p.data.village} ({wardName(p.ward)})</option>)}
+            </Select>
+          </Field>
+        ) : (
+          <Field label="Wards" note={f.role === 'worker' ? 'A health volunteer only sees and changes records in these wards.' : 'Doctors and administrators normally have every ward.'}>
+            <div className="flex flex-wrap gap-3">
+              {ALL_WARDS.map((w) => (
+                <label key={w} className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={f.wards.includes(w)}
+                    onChange={(e) => setF({ ...f, wards: e.target.checked ? [...f.wards, w] : f.wards.filter((x) => x !== w) })} />
+                  {wardName(w)}
+                </label>
+              ))}
+            </div>
+          </Field>
+        )}
+        <Field label="Set a new password (optional)" note="Leave empty to keep the current password.">
+          <Input value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" />
+        </Field>
+        {pw && (
+          <ul className="-mt-2 grid grid-cols-1 gap-x-3 text-[13px] sm:grid-cols-2">
+            {passwordChecks(pw).map((c) => <li key={c.label} className={c.ok ? 'text-pine' : 'text-ink-soft'}>{c.ok ? '✓' : '○'} {c.label}</li>)}
+          </ul>
+        )}
+      </div>
+    </Drawer>
+  );
+}
 
 function Tile({ icon: Icon, name, state, children, action }) {
   const tone = { up: 'text-pine', down: 'text-lali', off: 'text-ink-soft' }[state.tone];
@@ -40,7 +131,9 @@ function AddUser({ onClose, onAdded }) {
         {error && <div className="rounded-md bg-lali-wash px-3.5 py-2.5 text-sm text-lali-deep">{error}</div>}
         <Field label="Full name"><Input value={form.fullName} onChange={set('fullName')} /></Field>
         <Field label="Username"><Input value={form.username} onChange={set('username')} autoCapitalize="none" /></Field>
-        <Field label="Temporary password"><Input value={form.password} onChange={set('password')} /></Field>
+        <Field label="Temporary password" note="At least 8 characters with an uppercase letter, a lowercase letter, a number and a symbol.">
+          <Input value={form.password} onChange={set('password')} />
+        </Field>
         <Field label="Google email (optional)" note="Lets this person use Continue with Google once Google sign-in is set up.">
           <Input type="email" value={form.email} onChange={set('email')} />
         </Field>
@@ -77,6 +170,55 @@ function AddUser({ onClose, onAdded }) {
   );
 }
 
+// Accounts created from the sign-up page that still need a decision.
+function PendingAccounts({ users, isAdmin, onChanged }) {
+  const patients = usePatients() || [];
+  const toast = useToast();
+  const [links, setLinks] = useState({});
+  const pending = users.filter((u) => u.approved === false);
+  if (!pending.length) return null;
+  const act = async (fn, msg) => {
+    try { await fn(); toast(msg); onChanged(); } catch (e) { toast(e.message, 'bad'); }
+  };
+  return (
+    <Panel className="mb-5">
+      <PanelHead title="New accounts waiting for approval" icon={UserPlus} hint={`${pending.length} waiting`} />
+      <ul>
+        {pending.map((u) => {
+          const canDecide = u.role !== 'supervisor' || isAdmin;
+          return (
+            <li key={u.id} className="flex flex-wrap items-center gap-3 border-t border-line-soft px-5 py-3.5 first:border-t-0">
+              <div className="min-w-[220px] flex-1">
+                <div className="font-semibold">{u.full_name} <Badge tone="marigold" className="ml-1">{ROLE_NAMES[u.role]}</Badge></div>
+                <div className="text-[13px] text-ink-soft">
+                  {u.email}{u.auth_provider === 'google' ? ' (Google)' : ''}, {u.role === 'supervisor' ? 'all wards' : u.wards.map(wardName).join(', ')}, signed up {relativeTime(u.created_at)}
+                </div>
+              </div>
+              {u.role === 'patient' && (
+                <Select className="w-auto min-w-[230px]" aria-label={`Patient record for ${u.full_name}`} value={links[u.id] || ''}
+                  onChange={(e) => setLinks({ ...links, [u.id]: e.target.value })}>
+                  <option value="">Link to patient record…</option>
+                  {patients.filter((p) => u.wards.includes(p.ward)).map((p) => (
+                    <option key={p.id} value={p.id}>{p.data.name}, {p.data.village}</option>
+                  ))}
+                </Select>
+              )}
+              {canDecide ? (
+                <>
+                  <Button size="sm" disabled={u.role === 'patient' && !links[u.id]}
+                    onClick={() => act(() => api.approveUser(u.id, links[u.id]), `${u.full_name} can now sign in.`)}>Approve</Button>
+                  <Button size="sm" variant="ghost"
+                    onClick={() => window.confirm(`Reject and delete the sign-up of ${u.full_name}?`) && act(() => api.rejectUser(u.id), 'Sign-up rejected.')}>Reject</Button>
+                </>
+              ) : <span className="text-[13px] text-ink-soft">An administrator approves doctor accounts.</span>}
+            </li>
+          );
+        })}
+      </ul>
+    </Panel>
+  );
+}
+
 export function Admin() {
   const { user } = useAuth();
   const sync = useSync();
@@ -85,6 +227,8 @@ export function Admin() {
   const [audit, setAudit] = useState([]);
   const [backups, setBackups] = useState([]);
   const [adding, setAdding] = useState(false);
+  const [managing, setManaging] = useState(null);
+  const [userQuery, setUserQuery] = useState('');
   const [error, setError] = useState('');
   const isAdmin = user.role === 'admin';
 
@@ -173,21 +317,38 @@ export function Admin() {
         )}
       </Panel>
 
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Panel>
-          <PanelHead title="Users">
-            {isAdmin && <Button size="sm" variant="ghost" className="ml-auto" onClick={() => setAdding(true)}><UserPlus size={14} /> Add user</Button>}
-          </PanelHead>
-          <Table head={['Name', 'Role', 'Wards']}>
-            {o.users.map((u) => (
-              <tr key={u.id}>
-                <td><div className="font-semibold">{u.full_name}</div><div className="text-[13px] text-ink-soft">{u.username}</div></td>
+      <PendingAccounts users={o.users} isAdmin={isAdmin} onChanged={load} />
+
+      <Panel className="mb-5">
+        <PanelHead title="Users" hint={`${o.users.length} accounts, ${o.users.filter((u) => u.active && u.approved !== false).length} active`}>
+          <Input className="ml-2 h-8 w-full max-w-[240px] text-sm sm:ml-auto" placeholder="Search name, email, role" value={userQuery}
+            onChange={(e) => setUserQuery(e.target.value)} aria-label="Search users" />
+          {isAdmin && <Button size="sm" variant="ghost" onClick={() => setAdding(true)}><UserPlus size={14} /> Add user</Button>}
+        </PanelHead>
+        <Table head={['Name', 'Role', { label: 'Wards', hideSm: true }, 'Status', { label: 'Created', hideSm: true }, ...(isAdmin ? [''] : [])]}>
+          {o.users
+            .filter((u) => !userQuery.trim() || [u.full_name, u.username, u.email, ROLE_NAMES[u.role]].some((x) => (x || '').toLowerCase().includes(userQuery.trim().toLowerCase())))
+            .map((u) => (
+              <tr key={u.id} className={cx(!u.active && 'opacity-60')}>
+                <td>
+                  <div className="font-semibold">{u.full_name}{u.id === user.id && <span className="ml-1.5 text-[13px] font-normal text-ink-soft">(you)</span>}</div>
+                  <div className="text-[13px] text-ink-soft">{u.email || u.username}{u.auth_provider === 'google' ? ' · Google' : ''}</div>
+                </td>
                 <td>{ROLE_NAMES[u.role] || u.role}</td>
-                <td className="text-[13px]">{u.wards.map((w) => w.replace('ward-', 'Ward ')).join(', ')}</td>
+                <td className="hidden text-[13px] md:table-cell">{u.wards.map(wardName).join(', ')}</td>
+                <td>
+                  {!u.active ? <Badge tone="lali">Switched off</Badge>
+                    : u.approved === false ? <Badge tone="marigold">Waiting</Badge>
+                      : <Badge tone="pine">Active</Badge>}
+                </td>
+                <td className="hidden whitespace-nowrap text-[13px] text-ink-soft md:table-cell">{relativeTime(u.created_at)}</td>
+                {isAdmin && <td className="text-right"><Button size="sm" variant="ghost" onClick={() => setManaging(u)}>Manage</Button></td>}
               </tr>
             ))}
-          </Table>
-        </Panel>
+        </Table>
+      </Panel>
+
+      <div className="grid gap-5">
         <Panel>
           <PanelHead title="Audit log" hint="Sign-ins, resolutions, failovers" />
           <ul className="max-h-[420px] overflow-y-auto">
@@ -202,6 +363,7 @@ export function Admin() {
       </div>
 
       {adding && <AddUser onClose={() => setAdding(false)} onAdded={() => { toast('User added.'); load(); }} />}
+      {managing && <ManageUser account={managing} me={user} onClose={() => setManaging(null)} onSaved={load} />}
       {sync.isOffline && <p className="mt-4 text-sm text-marigold-deep">You are offline. Figures shown are from the last refresh.</p>}
     </>
   );

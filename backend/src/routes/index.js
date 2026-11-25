@@ -24,6 +24,7 @@ api.get('/health', (_req, res) => res.json({
 
 api.post('/auth/login', h(auth.login));
 api.post('/auth/google', h(auth.googleLogin));
+api.post('/auth/register', h(auth.register));
 api.get('/auth/config', auth.authConfig);
 api.get('/auth/me', requireAuth, auth.me);
 
@@ -53,6 +54,11 @@ const staff = requireRole('admin', 'supervisor');
 api.get('/admin/overview', staff, h(admin.overview));
 api.get('/admin/audit', staff, h(admin.audits));
 api.post('/admin/users', adminOnly, h(admin.addUser));
+// Supervisors may approve workers and patients; doctor accounts need an admin (checked in the service).
+api.post('/admin/users/:id/approve', staff, h(admin.approve));
+api.delete('/admin/users/:id', staff, h(admin.reject));
+api.patch('/admin/users/:id', adminOnly, h(admin.editUser));
+api.post('/admin/users/:id/password', adminOnly, h(admin.setPassword));
 api.post('/admin/sync-mode', adminOnly, h(admin.changeSyncMode));
 api.post('/admin/backup', adminOnly, h(admin.backup));
 api.get('/admin/backups', staff, h(admin.backups));

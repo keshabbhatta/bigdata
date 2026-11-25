@@ -10,17 +10,50 @@ export function signToken(user) {
   );
 }
 
-export function requireAuth(req, res, next) {
+// The token proves who the caller is; the CURRENT role, wards and status are
+// read from the users table (cached briefly), so an administrator's changes —
+// switching an account off, changing its role or wards — apply within seconds,
+// even to people who are already signed in.
+const USER_CACHE_MS = 15_000;
+const userCache = new Map();
+
+export function forgetUser(id) {
+  userCache.delete(Number(id));
+}
+
+async function currentUser(id) {
+  const hit = userCache.get(Number(id));
+  if (hit && Date.now() - hit.at < USER_CACHE_MS) return hit.row;
+  const { rows } = await query(
+    'SELECT id, username, full_name, role, wards, patient_id, active, approved FROM users WHERE id = $1', [id],
+  );
+  userCache.set(Number(id), { at: Date.now(), row: rows[0] || null });
+  return rows[0] || null;
+}
+
+export async function requireAuth(req, res, next) {
   const header = req.headers.authorization || '';
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: 'Sign in to continue.' });
+  let p;
   try {
-    const p = jwt.verify(token, config.jwtSecret);
-    req.user = { id: p.sub, username: p.username, name: p.name, role: p.role, wards: p.wards || [], patientId: p.pid || null };
-    next();
+    p = jwt.verify(token, config.jwtSecret);
   } catch {
-    res.status(401).json({ error: 'Your session has expired. Sign in again.' });
+    return res.status(401).json({ error: 'Your session has expired. Sign in again.' });
   }
+  let u;
+  try {
+    u = await currentUser(p.sub);
+  } catch {
+    u = undefined; // database briefly unreachable (e.g. during failover): trust the token
+  }
+  if (u === null || (u && (!u.active || !u.approved))) {
+    return res.status(401).json({ error: 'This account has been switched off. Contact your administrator.' });
+  }
+  req.user = u
+    ? { id: u.id, username: u.username, name: u.full_name, role: u.role, wards: u.wards || [], patientId: u.patient_id || null }
+    : { id: p.sub, username: p.username, name: p.name, role: p.role, wards: p.wards || [], patientId: p.pid || null };
+  next();
 }
 
 // Role-based access control.
@@ -57,7 +90,7 @@ export async function trackDevice(req, _res, next) {
     const pending = Number(req.headers['x-pending-count']);
     query(
       `INSERT INTO devices (device_id, user_id, user_agent, app_version, last_seen, pending_reported)
-       VALUES ($1, $2, $3, $4, now(), $5)
+       VALUES ($1, $2, $3, $4, now(), COALESCE($5::int, 0))
        ON CONFLICT (device_id) DO UPDATE SET user_id = $2, user_agent = $3, app_version = $4, last_seen = now(),
          pending_reported = COALESCE($5, devices.pending_reported)`,
       [req.deviceId, req.user.id, (req.headers['user-agent'] || '').slice(0, 200), req.headers['x-app-version'] || null,

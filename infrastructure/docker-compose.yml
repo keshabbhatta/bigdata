@@ -38,7 +38,8 @@ x-api: &api
     ETCD_HOSTS: etcd1:2379,etcd2:2379,etcd3:2379
     KAFKA_BROKERS: kafka:9092
     KAFKA_REPLICATION_FACTOR: ${KAFKA_REPLICATION_FACTOR:-1}
-    MINIO_ENDPOINT: minio
+    # MinIO image is no longer downloadable; empty endpoint = store files on local disk.
+    MINIO_ENDPOINT: ""
     MINIO_PORT: 9000
     MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
     MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
@@ -96,16 +97,6 @@ services:
       - pg-replica:/var/lib/postgresql/data
       - ./postgres/replica-entrypoint.sh:/replica-entrypoint.sh:ro
     ports: ["5433:5432"]
-
-  minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
-    restart: unless-stopped
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
-    volumes: [minio-data:/data]
-    ports: ["9000:9000", "9001:9001"]
 
   # ---------------------------------------------------------- coordination
   etcd1:
@@ -244,7 +235,6 @@ services:
 volumes:
   pg-primary:
   pg-replica:
-  minio-data:
   kafka-data:
   spark-ivy:
   spark-checkpoints:

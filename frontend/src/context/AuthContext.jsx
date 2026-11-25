@@ -64,26 +64,37 @@ export function AuthProvider({ children }) {
     localStorage.setItem('rh.lastUser', username);
   };
 
+  // Start a session from a server reply. With a password, also keep an offline
+  // verifier, under the name typed (email or username) and the account username.
+  const startSession = async (res, tab, { password, typed, via } = {}) => {
+    checkTab(res.user, tab);
+    await prepareDevice(res.user.username);
+    if (password) {
+      const verifier = await hashPassword(password);
+      if (verifier) {
+        const saved = JSON.stringify({ ...verifier, user: res.user, token: res.token });
+        for (const k of new Set([typed, res.user.username].filter(Boolean))) localStorage.setItem(credKey(k), saved);
+      }
+    }
+    const s = { token: res.token, user: res.user, offline: false, ...(via ? { via } : {}) };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    setSession(s);
+    return s;
+  };
+
   const login = useCallback(async (usernameRaw, password, tab) => {
     const username = usernameRaw.trim().toLowerCase();
     try {
       const res = await api.login(username, password);
-      checkTab(res.user, tab);
-      await prepareDevice(username);
-      const verifier = await hashPassword(password);
-      if (verifier) localStorage.setItem(credKey(username), JSON.stringify({ ...verifier, user: res.user, token: res.token }));
-      const s = { token: res.token, user: res.user, offline: false };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(s));
-      setSession(s);
-      return s;
+      return await startSession(res, tab, { password, typed: username });
     } catch (err) {
       if (!err.offline) throw err;
       const saved = JSON.parse(localStorage.getItem(credKey(username)) || 'null');
       if (!saved) throw new Error('You are offline, and this account has not signed in on this phone before. Connect once to sign in.');
       const check = await hashPassword(password, saved.salt);
-      if (!check || check.hash !== saved.hash) throw new Error('Username or password is incorrect.');
+      if (!check || check.hash !== saved.hash) throw new Error('Email/username or password is incorrect.');
       checkTab(saved.user, tab);
-      await prepareDevice(username);
+      await prepareDevice(saved.user.username);
       const s = { token: saved.token, user: saved.user, offline: true };
       localStorage.setItem(SESSION_KEY, JSON.stringify(s));
       setSession(s);
@@ -91,15 +102,21 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  // Create an account (needs a connection). Returns { pending, message } when it must be approved first.
+  const register = useCallback(async (form, tab) => {
+    const res = await api.register({ ...form, tab });
+    if (res.pending) return { pending: true, message: res.message };
+    await startSession(res, tab, { password: form.password, typed: form.email.trim().toLowerCase() });
+    return { pending: false };
+  }, []);
+
   // Google sign-in needs a connection; afterwards the session works offline like any other.
-  const loginWithGoogle = useCallback(async (credential, tab) => {
-    const res = await api.googleLogin(credential);
-    checkTab(res.user, tab);
-    await prepareDevice(res.user.username);
-    const s = { token: res.token, user: res.user, offline: false, via: 'google' };
-    localStorage.setItem(SESSION_KEY, JSON.stringify(s));
-    setSession(s);
-    return s;
+  // `signup` ({ ward }) is sent from the "Create an account" screen so a new account can be made.
+  const loginWithGoogle = useCallback(async (credential, tab, signup) => {
+    const res = await api.googleLogin(credential, signup ? { ...signup, tab } : undefined);
+    if (res.pending) return { pending: true, message: res.message };
+    await startSession(res, tab, { via: 'google' });
+    return { pending: false };
   }, []);
 
   const logout = useCallback(() => {
@@ -107,7 +124,7 @@ export function AuthProvider({ children }) {
     setSession(null);
   }, []);
 
-  const value = useMemo(() => ({ session, user: session?.user || null, login, loginWithGoogle, logout }), [session, login, loginWithGoogle, logout]);
+  const value = useMemo(() => ({ session, user: session?.user || null, login, register, loginWithGoogle, logout }), [session, login, register, loginWithGoogle, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

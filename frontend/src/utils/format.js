@@ -52,3 +52,16 @@ export const FIELD_LABELS = {
 };
 
 export const UNITS = { bpSystolic: 'mmHg', bpDiastolic: 'mmHg', hemoglobin: 'g/dL', weightKg: 'kg', temperatureC: '°C' };
+
+// "Dr. Anita Sharma" -> greeting "Dr. Anita", short "Anita", initials "AS".
+const TITLE = /^(dr|mr|mrs|ms|prof)\.?$/i;
+export function nameParts(full = '') {
+  const parts = full.split(' ').filter(Boolean);
+  const title = parts.length > 1 && TITLE.test(parts[0]) ? parts[0] : '';
+  const rest = title ? parts.slice(1) : parts;
+  return {
+    short: rest[0] || full,
+    greeting: title ? `${title} ${rest[0]}` : rest[0] || full,
+    initials: rest.slice(0, 2).map((p) => p[0].toUpperCase()).join(''),
+  };
+}

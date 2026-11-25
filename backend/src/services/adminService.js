@@ -8,6 +8,7 @@ import { coordinationStatus } from '../coordination/coordinator.js';
 import { dbHealth, refreshDbHealth } from '../coordination/failover.js';
 import { storageStatus, putObject, listObjects } from './storageService.js';
 import { getSyncMode } from './clock.js';
+import { validateEmail, validatePassword } from './accountService.js';
 
 const gzip = promisify(zlib.gzip);
 
@@ -24,7 +25,8 @@ export async function systemOverview() {
     query(`SELECT d.device_id, d.last_seen, d.last_sync_at, d.last_pull_seq, d.pending_reported, d.events_pushed,
                   d.app_version, d.user_agent, u.full_name, u.username, u.role
            FROM devices d LEFT JOIN users u ON u.id = d.user_id ORDER BY d.last_seen DESC NULLS LAST LIMIT 100`),
-    query('SELECT id, username, full_name, role, wards, email, active, created_at FROM users ORDER BY id'),
+    query(`SELECT id, username, full_name, role, wards, email, active, approved, auth_provider, patient_id, created_at
+           FROM users ORDER BY approved, id`),
   ]);
   return {
     instanceId: config.instanceId,
@@ -44,6 +46,8 @@ export async function createUser({ username, password, fullName, role, wards, em
   if (!username || !password || !fullName) throw Object.assign(new Error('Username, password and full name are required.'), { status: 400 });
   if (!['admin', 'supervisor', 'worker', 'patient'].includes(role)) throw Object.assign(new Error('Role must be admin, supervisor, worker or patient.'), { status: 400 });
   if (role === 'patient' && !patientId) throw Object.assign(new Error('Choose which patient record this account belongs to.'), { status: 400 });
+  validatePassword(password);
+  if (email?.trim()) email = await validateEmail(email);
   const hash = await bcrypt.hash(password, 10);
   try {
     const { rows } = await query(

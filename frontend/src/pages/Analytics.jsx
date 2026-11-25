@@ -90,7 +90,7 @@ export function Analytics() {
                     <YAxis tick={axis} allowDecimals={false} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    {types.map((k) => <Bar key={k} dataKey={k} stackId="v" fill={TYPE_COLORS[k] || C.soft} name={TYPE_NAMES[k] || k} />)}
+                    {types.map((k) => <Bar key={k} animationDuration={800} dataKey={k} stackId="v" fill={TYPE_COLORS[k] || C.soft} name={TYPE_NAMES[k] || k} />)}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -106,9 +106,9 @@ export function Analytics() {
                     <YAxis type="category" dataKey="village" tick={axis} width={80} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="patients" fill={C.ink} name="Patients" />
-                    <Bar dataKey="pregnancies" fill={C.pine} name="Active pregnancies" />
-                    <Bar dataKey="highRisk" fill={C.lali} name="High risk" />
+                    <Bar animationDuration={800} dataKey="patients" fill={C.ink} name="Patients" />
+                    <Bar animationDuration={800} dataKey="pregnancies" fill={C.pine} name="Active pregnancies" />
+                    <Bar animationDuration={800} dataKey="highRisk" fill={C.lali} name="High risk" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -123,7 +123,7 @@ export function Analytics() {
                     <XAxis dataKey="month" tick={axis} />
                     <YAxis tick={axis} allowDecimals={false} />
                     <Tooltip />
-                    <Line type="monotone" dataKey="count" name="Registrations" stroke={C.pine} strokeWidth={2.5} dot={{ r: 3 }} />
+                    <Line animationDuration={900} type="monotone" dataKey="count" name="Registrations" stroke={C.pine} strokeWidth={2.5} dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
