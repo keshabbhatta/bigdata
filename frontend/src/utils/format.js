@@ -1,3 +1,5 @@
+import { areaLabel, upgradeWard } from '../../../shared/areas.js';
+
 export function relativeTime(ts) {
   if (!ts) return 'never';
   const t = typeof ts === 'number' ? ts : new Date(ts).getTime();
@@ -42,8 +44,12 @@ export function bytes(n) {
   return `${(n / 1024 / 1024).toFixed(2)} MB`;
 }
 
-export const WARD_NAMES = { 'ward-1': 'Ward 1', 'ward-2': 'Ward 2', 'ward-3': 'Ward 3' };
-export const wardName = (w) => WARD_NAMES[w] || w;
+// Short label of any area code: "Ward 5, Indrawati RM", "Sindhupalchok District", "Bagmati Province", "All of Nepal".
+export const wardName = (w) => areaLabel(upgradeWard(w), { short: true });
+// Full label: "Ward 5, Indrawati Rural Municipality, Sindhupalchok District, Bagmati Province".
+export const wardFullName = (w) => areaLabel(upgradeWard(w));
+/** "Ward 1, Indrawati RM" for one area, "3 areas" for several. */
+export const scopesLabel = (scopes = []) => (scopes.length === 1 ? wardName(scopes[0]) : `${scopes.length} areas`);
 
 export const FIELD_LABELS = {
   bpSystolic: 'Blood pressure (systolic)', bpDiastolic: 'Blood pressure (diastolic)', hemoglobin: 'Hemoglobin',

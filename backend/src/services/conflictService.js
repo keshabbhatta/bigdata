@@ -5,16 +5,16 @@
 import { ENTITIES, validateChanges } from '../../../shared/schema.js';
 import { vvAddDot } from '../../../shared/versionVector.js';
 import { withTransaction, query } from '../database/pool.js';
-import { allowedWards, canAccessWard, audit } from '../middleware/auth.js';
+import { wardPatterns, canAccessWard, audit } from '../middleware/auth.js';
 import { serverClock } from './clock.js';
 import { toClientConflict } from './syncService.js';
 
 export async function listConflicts(user, status = 'open') {
-  const wards = allowedWards(user);
+  const wards = wardPatterns(user);
   const { rows } = await query(
     `SELECT c.*, r.data AS record_data, r.entity AS record_entity
      FROM conflicts c JOIN records r ON r.id = c.record_id AND r.ward = c.ward
-     WHERE ($1::text = 'all' OR c.status = $1) AND ($2::text[] IS NULL OR c.ward = ANY($2))
+     WHERE ($1::text = 'all' OR c.status = $1) AND ($2::text[] IS NULL OR c.ward LIKE ANY($2))
      ORDER BY c.status = 'open' DESC, c.updated_at DESC LIMIT 200`,
     [status, wards],
   );

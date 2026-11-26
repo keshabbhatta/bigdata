@@ -7,13 +7,13 @@
 // silently overwritten when two workers edit them concurrently — both values are
 // kept and the record is flagged for review.
 
+import { DEMO_WARDS, areaLabel } from './areas.js';
+
 export const SCHEMA_VERSION = 2;
 
-export const WARDS = [
-  { id: 'ward-1', name: 'Ward 1' },
-  { id: 'ward-2', name: 'Ward 2' },
-  { id: 'ward-3', name: 'Ward 3' },
-];
+// Wards are real wards of Nepal (7 provinces, 77 districts, 753 local levels,
+// 6,743 wards). See shared/areas.js. WARDS lists only the demo wards.
+export const WARDS = DEMO_WARDS.map((id) => ({ id, name: areaLabel(id, { short: true }) }));
 
 export const ENTITIES = {
   patient: {

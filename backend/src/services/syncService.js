@@ -16,7 +16,8 @@ import { ENTITIES, OPS, upcastEvent, validateChanges } from '../../../shared/sch
 import { decideField, sameValue } from '../../../shared/merge.js';
 import { vvAddDot } from '../../../shared/versionVector.js';
 import { withTransaction, query } from '../database/pool.js';
-import { canAccessWard, allowedWards } from '../middleware/auth.js';
+import { canAccessWard, wardPatterns } from '../middleware/auth.js';
+import { isValidWard, upgradeWard } from '../../../shared/areas.js';
 import { serverClock, getSyncMode } from './clock.js';
 import { metrics } from '../middleware/metrics.js';
 
@@ -33,6 +34,7 @@ function checkShape(e) {
   if (!ENTITIES[e.entity]) return `Unknown entity "${e.entity}"`;
   if (!OPS.includes(e.op)) return `Unknown operation "${e.op}"`;
   if (typeof e.ward !== 'string' || !e.ward) return 'ward is required';
+  if (!isValidWard(e.ward)) return `"${e.ward}" is not a ward of Nepal`;
   if (!e.dot || typeof e.dot.d !== 'string' || !Number.isInteger(e.dot.c)) return 'dot {d, c} is required';
   if (typeof e.hlc !== 'string') return 'hlc timestamp is required';
   if (e.changes && typeof e.changes !== 'object') return 'changes must be an object';
@@ -45,6 +47,8 @@ function checkShape(e) {
  */
 export async function processEvent(rawEvent, user, deviceId) {
   const event = upcastEvent(rawEvent);
+  // Phones still holding the old demo codes ("ward-1") are translated to real wards.
+  if (typeof event.ward === 'string') event.ward = upgradeWard(event.ward);
   const base = { eventId: event.eventId, recordId: event.recordId };
 
   const shapeProblem = checkShape(event);
@@ -226,12 +230,12 @@ export async function pushEvents(events, user, deviceId) {
 
 /** Pull every record (in the user's wards) that changed after `since`. */
 export async function pullChanges(user, deviceId, since = 0, limit = 300) {
-  const wards = allowedWards(user);
+  const wards = wardPatterns(user);
   const cappedLimit = Math.min(Math.max(Number(limit) || 300, 1), 1000);
   const { rows } = await query(
     `SELECT id, ward, entity, data, vv, version, deleted, open_conflicts, server_seq, created_at, updated_at
      FROM records
-     WHERE server_seq > $1 AND ($2::text[] IS NULL OR ward = ANY($2))
+     WHERE server_seq > $1 AND ($2::text[] IS NULL OR ward LIKE ANY($2))
        AND ($4::uuid IS NULL OR id = $4 OR data->>'patientId' = $4::text)
      ORDER BY server_seq ASC LIMIT $3`,
     [Number(since) || 0, wards, cappedLimit + 1, user.role === 'patient' ? (user.patientId || '00000000-0000-0000-0000-000000000000') : null],

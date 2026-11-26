@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { query } from '../database/pool.js';
+import { NATION, inScope, scopePatterns } from '../../../shared/areas.js';
 
 export function signToken(user) {
   return jwt.sign(
@@ -72,14 +73,22 @@ export function staffOrWorker(req, res, next) {
   next();
 }
 
-// Workers (and patients) only see their own wards; supervisors and admins see all.
+// A user's `wards` are area scopes (all of Nepal "NP", a province, district,
+// local level or single ward, see shared/areas.js). Administrators see everything;
+// everyone else sees the wards inside their scopes.
 export function allowedWards(user) {
-  return user.role === 'worker' || user.role === 'patient' ? user.wards : null; // null = all wards
+  if (user.role === 'admin') return null; // null = all of Nepal
+  const scopes = user.wards || [];
+  return scopes.includes(NATION) ? null : scopes;
 }
 
 export function canAccessWard(user, ward) {
-  const wards = allowedWards(user);
-  return wards === null || wards.includes(ward);
+  return inScope(ward, allowedWards(user));
+}
+
+/** SQL LIKE patterns for the user's scopes, for `ward LIKE ANY($n)` (null = no limit). */
+export function wardPatterns(user) {
+  return scopePatterns(allowedWards(user));
 }
 
 // Keep track of each device that talks to the server (shown in the admin dashboard).

@@ -6,17 +6,21 @@ import { query } from './pool.js';
 import { processEvent } from '../services/syncService.js';
 import { HybridLogicalClock } from '../../../shared/hlc.js';
 import { eddFromLmp } from '../../../shared/schema.js';
+import { DEMO_WARDS, NATION } from '../../../shared/areas.js';
+
+// Demo area: wards 1-3 of Indrawati Rural Municipality, Sindhupalchok, Bagmati Province.
+const [W1, W2, W3] = DEMO_WARDS;
 
 export const DEMO_USERS = [
-  { username: 'admin', password: 'admin123', fullName: 'System Admin', role: 'admin', wards: ['ward-1', 'ward-2', 'ward-3'] },
-  { username: 'supervisor', password: 'super123', fullName: 'Dr. Anita Sharma', role: 'supervisor', wards: ['ward-1', 'ward-2', 'ward-3'] },
-  { username: 'sita', password: 'fchv123', fullName: 'Sita Tamang', role: 'worker', wards: ['ward-1'] },
-  { username: 'gita', password: 'fchv123', fullName: 'Gita Gurung', role: 'worker', wards: ['ward-1'] },
-  { username: 'maya', password: 'fchv123', fullName: 'Maya Rai', role: 'worker', wards: ['ward-2'] },
-  { username: 'kamala', password: 'fchv123', fullName: 'Kamala Thapa', role: 'worker', wards: ['ward-3'] },
+  { username: 'admin', password: 'admin123', fullName: 'System Admin', role: 'admin', wards: [NATION] },
+  { username: 'supervisor', password: 'super123', fullName: 'Dr. Anita Sharma', role: 'supervisor', wards: [NATION] },
+  { username: 'sita', password: 'fchv123', fullName: 'Sita Tamang', role: 'worker', wards: [W1] },
+  { username: 'gita', password: 'fchv123', fullName: 'Gita Gurung', role: 'worker', wards: [W1] },
+  { username: 'maya', password: 'fchv123', fullName: 'Maya Rai', role: 'worker', wards: [W2] },
+  { username: 'kamala', password: 'fchv123', fullName: 'Kamala Thapa', role: 'worker', wards: [W3] },
 ];
 
-const VILLAGES = { 'ward-1': ['Simle', 'Dhuseni'], 'ward-2': ['Chisapani', 'Kalimati'], 'ward-3': ['Bhanjyang', 'Thulogaun'] };
+const VILLAGES = { [W1]: ['Simle', 'Dhuseni'], [W2]: ['Chisapani', 'Kalimati'], [W3]: ['Bhanjyang', 'Thulogaun'] };
 const FEMALE = ['Sabina', 'Anjali', 'Kamala', 'Laxmi', 'Sarita', 'Puja', 'Asmita', 'Rekha', 'Bimala', 'Sunita', 'Radha',
   'Parbati', 'Durga', 'Kabita', 'Manisha', 'Srijana', 'Nirmala', 'Sushila', 'Januka', 'Mina', 'Rita', 'Samjhana'];
 const MALE = ['Ram', 'Hari', 'Bikash', 'Suman', 'Rajesh', 'Dipak', 'Krishna', 'Prakash', 'Nabin', 'Bishnu'];
@@ -49,14 +53,14 @@ export async function seedPatientUser() {
   const { rows } = await query(
     `SELECT pt.id, pt.data->>'name' AS name FROM records pr
      JOIN records pt ON pt.id::text = pr.data->>'patientId'
-     WHERE pr.entity = 'pregnancy' AND pr.ward = 'ward-1' AND pr.data->>'status' = 'active' AND NOT pr.deleted
-     ORDER BY (pr.data->>'riskLevel' = 'high') DESC, pr.created_at LIMIT 1`,
+     WHERE pr.entity = 'pregnancy' AND pr.ward = $1 AND pr.data->>'status' = 'active' AND NOT pr.deleted
+     ORDER BY (pr.data->>'riskLevel' = 'high') DESC, pr.created_at LIMIT 1`, [W1],
   );
   if (!rows[0]) return;
   await query(
     `INSERT INTO users (username, password_hash, full_name, role, wards, patient_id)
-     VALUES ('mother', $1, $2, 'patient', '{ward-1}', $3) ON CONFLICT (username) DO NOTHING`,
-    [await bcrypt.hash('patient123', 10), rows[0].name, rows[0].id],
+     VALUES ('mother', $1, $2, 'patient', $4, $3) ON CONFLICT (username) DO NOTHING`,
+    [await bcrypt.hash('patient123', 10), rows[0].name, rows[0].id, [W1]],
   );
 }
 

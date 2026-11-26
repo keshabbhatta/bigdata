@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { usePatients } from '../hooks/useRecords.js';
 import { RecordForm, PATIENT_FIELDS } from '../components/RecordForm.jsx';
 import { Avatar, Badge, Button, Empty, Input, PageHead, Panel, Select } from '../components/ui.jsx';
+import { scopesLabel } from '../utils/format.js';
 
 export function Patients() {
   const { user } = useAuth();
@@ -29,7 +30,7 @@ export function Patients() {
 
   return (
     <>
-      <PageHead title="Patients" subtitle={patients ? `${patients.length} people registered in your ${user.wards.length > 1 ? 'wards' : 'ward'}.` : ' '}>
+      <PageHead title="Patients" subtitle={patients ? `${patients.length} people registered in ${scopesLabel(user.wards)}.` : ' '}>
         <Button onClick={() => setAdding(true)}><Plus size={18} /> Register patient</Button>
       </PageHead>
 

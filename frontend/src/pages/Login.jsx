@@ -6,7 +6,8 @@ import { api } from '../services/api.js';
 import { VillageScene } from '../components/VillageScene.jsx';
 import { Button, Field, Input, Segmented, Select, cx } from '../components/ui.jsx';
 import { passwordChecks, passwordProblems, isEmailFormat } from '../../../shared/accounts.js';
-import { WARDS } from '../../../shared/schema.js';
+import { NATION, isValidWard } from '../../../shared/areas.js';
+import { AreaPicker } from '../components/AreaPicker.jsx';
 
 const TABS = [
   { id: 'worker', icon: Footprints, blurb: 'Register households and record visits in the field, even with no signal.' },
@@ -16,18 +17,18 @@ const TABS = [
 
 const SIGNUP_NOTE = {
   worker: 'Health worker accounts can sign in right away and see the ward you choose.',
-  doctor: 'Doctor accounts can see every ward, so an administrator approves them before the first sign-in.',
+  doctor: 'Doctor accounts can see every ward in the area you choose, so an administrator approves them before the first sign-in.',
   patient: 'Your health post links the account to your health record. You can sign in after that.',
 };
 
 const DEMO = {
   worker: [
-    { u: 'sita', p: 'fchv123', who: 'Sita Tamang', role: 'Ward 1' },
-    { u: 'gita', p: 'fchv123', who: 'Gita Gurung', role: 'Ward 1' },
-    { u: 'maya', p: 'fchv123', who: 'Maya Rai', role: 'Ward 2' },
+    { u: 'sita', p: 'fchv123', who: 'Sita Tamang', role: 'Ward 1, Indrawati RM' },
+    { u: 'gita', p: 'fchv123', who: 'Gita Gurung', role: 'Ward 1, Indrawati RM' },
+    { u: 'maya', p: 'fchv123', who: 'Maya Rai', role: 'Ward 2, Indrawati RM' },
   ],
   doctor: [
-    { u: 'supervisor', p: 'super123', who: 'Dr. Anita Sharma', role: 'All wards' },
+    { u: 'supervisor', p: 'super123', who: 'Dr. Anita Sharma', role: 'All of Nepal' },
     { u: 'admin', p: 'admin123', who: 'System Admin', role: 'Administrator' },
   ],
   patient: [{ u: 'mother', p: 'patient123', who: 'Demo mother', role: 'Ward 1, pregnant' }],
@@ -173,13 +174,17 @@ function DemoAccounts({ tab, onPick }) {
 function SignUpForm({ tab, signupRef, onPending, onError, error }) {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const [f, setF] = useState({ fullName: '', email: '', password: '', confirm: '', ward: WARDS[0].id });
+  const [f, setF] = useState({ fullName: '', email: '', password: '', confirm: '', ward: '', area: NATION });
   const [busy, setBusy] = useState(false);
   const needsWard = tab !== 'doctor';
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
   const checks = passwordChecks(f.password);
-  // Google sign-up on this screen uses the ward chosen here.
-  signupRef.current = () => ({ ward: needsWard ? f.ward : undefined });
+  const where = () => (needsWard ? { ward: f.ward } : { area: f.area || NATION });
+  // Google sign-up on this screen uses the ward / area chosen here.
+  signupRef.current = () => {
+    if (needsWard && !isValidWard(f.ward)) throw new Error('Choose your province, district, municipality and ward first.');
+    return where();
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -189,9 +194,10 @@ function SignUpForm({ tab, signupRef, onPending, onError, error }) {
     const problems = passwordProblems(f.password);
     if (problems.length) return onError(problems[0]);
     if (f.password !== f.confirm) return onError('The two passwords do not match.');
+    if (needsWard && !isValidWard(f.ward)) return onError('Choose your province, district, municipality and ward.');
     setBusy(true);
     try {
-      const r = await register({ fullName: f.fullName.trim(), email: f.email.trim(), password: f.password, ward: needsWard ? f.ward : undefined }, tab);
+      const r = await register({ fullName: f.fullName.trim(), email: f.email.trim(), password: f.password, ...where() }, tab);
       if (r.pending) onPending(r.message); else navigate('/', { replace: true });
     } catch (err) {
       onError(err.offline ? 'Creating an account needs an internet connection.' : err.message);
@@ -209,12 +215,17 @@ function SignUpForm({ tab, signupRef, onPending, onError, error }) {
       <Field label="Email" note="Use a real address you can receive mail at. Fake or misspelled domains are rejected.">
         <Input type="email" value={f.email} onChange={set('email')} autoComplete="email" autoCapitalize="none" inputMode="email" required />
       </Field>
-      {needsWard && (
-        <Field label={tab === 'patient' ? 'Your ward (health post area)' : 'Your ward'}>
-          <Select value={f.ward} onChange={set('ward')}>
-            {WARDS.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-          </Select>
-        </Field>
+      {needsWard ? (
+        <fieldset className="rounded-lg border border-line p-3">
+          <legend className="px-1 text-[13px] font-semibold text-ink-2">{tab === 'patient' ? 'Where you live' : 'The ward you work in'}</legend>
+          <AreaPicker value={f.ward} onChange={(ward) => setF({ ...f, ward })} level="ward" compact />
+        </fieldset>
+      ) : (
+        <fieldset className="rounded-lg border border-line p-3">
+          <legend className="px-1 text-[13px] font-semibold text-ink-2">The area you cover</legend>
+          <AreaPicker value={f.area} onChange={(area) => setF({ ...f, area: area || NATION })} level="any" allowNation compact />
+          <p className="mt-2 text-xs text-ink-soft">Leave as "All of Nepal" or narrow it to a province, district or municipality.</p>
+        </fieldset>
       )}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="signup-password" className="text-[13px] font-semibold text-ink-2">Password</label>

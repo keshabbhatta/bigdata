@@ -6,7 +6,9 @@ import { saveRecord, ValidationError } from '../offline/repository.js';
 import { useSync } from '../context/SyncContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { Button, Drawer, Field, Input, Select, Textarea, cx } from './ui.jsx';
-import { wardName } from '../utils/format.js';
+import { wardFullName } from '../utils/format.js';
+import { AreaPicker } from './AreaPicker.jsx';
+import { isValidWard, inScope, upgradeWard } from '../../../shared/areas.js';
 
 const LONG_TEXT = new Set(['notes', 'findings', 'dangerSigns', 'outcome']);
 const ENUM_LABELS = {
@@ -43,7 +45,12 @@ function fromForm(entity, values) {
 export function RecordForm({ entity, title, fields, record, fixed = {}, wards = [], villages = [], afterSave, onClose, saveLabel, extra }) {
   const def = ENTITIES[entity];
   const [values, setValues] = useState(() => toForm(entity, fields, record?.data || fixed.defaults));
-  const [ward, setWard] = useState(record?.ward || fixed.ward || wards[0]);
+  // `wards` are the user's area scopes. A new record needs one real ward inside them;
+  // if the user covers exactly one ward it is chosen automatically.
+  const scopes = wards.map(upgradeWard);
+  const singleWard = scopes.length === 1 && isValidWard(scopes[0]) ? scopes[0] : '';
+  const [ward, setWard] = useState(record?.ward || fixed.ward || singleWard);
+  const choosesWard = !record && !fixed.ward && !singleWard;
   const [errors, setErrors] = useState([]);
   const [busy, setBusy] = useState(false);
   const sync = useSync();
@@ -57,8 +64,12 @@ export function RecordForm({ entity, title, fields, record, fixed = {}, wards = 
 
   const submit = async (e) => {
     e.preventDefault();
-    setBusy(true);
     setErrors([]);
+    if (!record && (!isValidWard(ward) || (scopes.length && !inScope(ward, scopes)))) {
+      setErrors(['Choose the province, district, municipality and ward.']);
+      return;
+    }
+    setBusy(true);
     try {
       const { defaults, ward: _w, ...fixedValues } = fixed;
       const changes = { ...fromForm(entity, values), ...fixedValues };
@@ -93,12 +104,13 @@ export function RecordForm({ entity, title, fields, record, fixed = {}, wards = 
             {errors.map((x) => <div key={x}>{x}</div>)}
           </div>
         )}
-        {!record && wards.length > 1 && (
-          <Field label="Ward" className="sm:col-span-2">
-            <Select value={ward} onChange={(e) => setWard(e.target.value)}>
-              {wards.map((w) => <option key={w} value={w}>{wardName(w)}</option>)}
-            </Select>
-          </Field>
+        {choosesWard && (
+          <div className="sm:col-span-2">
+            <AreaPicker value={ward} onChange={setWard} level="ward" within={scopes.length ? scopes : null} />
+          </div>
+        )}
+        {!record && !choosesWard && ward && (
+          <p className="text-sm text-ink-soft sm:col-span-2">Ward: <b className="text-ink">{wardFullName(ward)}</b></p>
         )}
         {fields.map((f) => {
           const spec = def.fields[f];

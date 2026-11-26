@@ -9,7 +9,8 @@ import { Badge, Button, Drawer, Empty, Field, Input, PageHead, Panel, PanelHead,
 import { bytes, formatDateTime, relativeTime, wardName } from '../utils/format.js';
 import { passwordChecks } from '../../../shared/accounts.js';
 
-const ALL_WARDS = ['ward-1', 'ward-2', 'ward-3'];
+import { ScopeEditor } from '../components/AreaPicker.jsx';
+import { inScope, NATION } from '../../../shared/areas.js';
 
 /** Admin edits any account: details, role, wards, patient link, on/off, password. */
 function ManageUser({ account: u, me, onClose, onSaved }) {
@@ -74,17 +75,10 @@ function ManageUser({ account: u, me, onClose, onSaved }) {
             </Select>
           </Field>
         ) : (
-          <Field label="Wards" note={f.role === 'worker' ? 'A health volunteer only sees and changes records in these wards.' : 'Doctors and administrators normally have every ward.'}>
-            <div className="flex flex-wrap gap-3">
-              {ALL_WARDS.map((w) => (
-                <label key={w} className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={f.wards.includes(w)}
-                    onChange={(e) => setF({ ...f, wards: e.target.checked ? [...f.wards, w] : f.wards.filter((x) => x !== w) })} />
-                  {wardName(w)}
-                </label>
-              ))}
-            </div>
-          </Field>
+          <ScopeEditor label="Areas this person covers" value={f.wards} onChange={(wards) => setF({ ...f, wards })}
+            note={f.role === 'worker'
+              ? 'A health volunteer only sees and changes records in these areas, usually one ward.'
+              : 'Can be All of Nepal, a province, district, municipality or ward.'} />
         )}
         <Field label="Set a new password (optional)" note="Leave empty to keep the current password.">
           <Input value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password" />
@@ -114,7 +108,7 @@ function Tile({ icon: Icon, name, state, children, action }) {
 }
 
 function AddUser({ onClose, onAdded }) {
-  const [form, setForm] = useState({ username: '', password: '', fullName: '', email: '', role: 'worker', wards: ['ward-1'], patientId: '' });
+  const [form, setForm] = useState({ username: '', password: '', fullName: '', email: '', role: 'worker', wards: [], patientId: '' });
   const patients = usePatients() || [];
   const [error, setError] = useState('');
   const save = async () => {
@@ -154,17 +148,12 @@ function AddUser({ onClose, onAdded }) {
             </Select>
           </Field>
         )}
-        <Field label="Wards" note="Health volunteers only see records from their wards.">
-          <div className="flex flex-wrap gap-3">
-            {['ward-1', 'ward-2', 'ward-3'].map((w) => (
-              <label key={w} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.wards.includes(w)}
-                  onChange={(e) => setForm({ ...form, wards: e.target.checked ? [...form.wards, w] : form.wards.filter((x) => x !== w) })} />
-                {wardName(w)}
-              </label>
-            ))}
-          </div>
-        </Field>
+        {form.role !== 'patient' && (
+          <ScopeEditor label="Areas this person covers" value={form.wards} onChange={(wards) => setForm({ ...form, wards })}
+            note={form.role === 'worker'
+              ? 'Health volunteers only see records from these areas, usually one ward.'
+              : 'Leave empty for All of Nepal, or add a province, district or municipality.'} />
+        )}
       </div>
     </Drawer>
   );
@@ -191,14 +180,14 @@ function PendingAccounts({ users, isAdmin, onChanged }) {
               <div className="min-w-[220px] flex-1">
                 <div className="font-semibold">{u.full_name} <Badge tone="marigold" className="ml-1">{ROLE_NAMES[u.role]}</Badge></div>
                 <div className="text-[13px] text-ink-soft">
-                  {u.email}{u.auth_provider === 'google' ? ' (Google)' : ''}, {u.role === 'supervisor' ? 'all wards' : u.wards.map(wardName).join(', ')}, signed up {relativeTime(u.created_at)}
+                  {u.email}{u.auth_provider === 'google' ? ' (Google)' : ''}, {u.wards.map(wardName).join('; ') || 'no area'}, signed up {relativeTime(u.created_at)}
                 </div>
               </div>
               {u.role === 'patient' && (
                 <Select className="w-auto min-w-[230px]" aria-label={`Patient record for ${u.full_name}`} value={links[u.id] || ''}
                   onChange={(e) => setLinks({ ...links, [u.id]: e.target.value })}>
                   <option value="">Link to patient record…</option>
-                  {patients.filter((p) => u.wards.includes(p.ward)).map((p) => (
+                  {patients.filter((p) => inScope(p.ward, u.wards)).map((p) => (
                     <option key={p.id} value={p.id}>{p.data.name}, {p.data.village}</option>
                   ))}
                 </Select>
@@ -335,7 +324,7 @@ export function Admin() {
                   <div className="text-[13px] text-ink-soft">{u.email || u.username}{u.auth_provider === 'google' ? ' · Google' : ''}</div>
                 </td>
                 <td>{ROLE_NAMES[u.role] || u.role}</td>
-                <td className="hidden text-[13px] md:table-cell">{u.wards.map(wardName).join(', ')}</td>
+                <td className="hidden max-w-[260px] text-[13px] md:table-cell">{u.wards.map(wardName).join('; ')}</td>
                 <td>
                   {!u.active ? <Badge tone="lali">Switched off</Badge>
                     : u.approved === false ? <Badge tone="marigold">Waiting</Badge>

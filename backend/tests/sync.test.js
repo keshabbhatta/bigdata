@@ -3,6 +3,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { HybridLogicalClock } from '../../shared/hlc.js';
+import { DEMO_WARDS } from '../../shared/areas.js';
+
+const WARD_1 = DEMO_WARDS[0]; // Ward 1, Indrawati Rural Municipality (Sita and Gita's ward)
 
 const API = process.env.API_URL || 'http://localhost:4000';
 
@@ -71,7 +74,7 @@ test('pull only returns records from the worker\'s own ward (sharding)', async (
   const d = device('sita-phone', state.sita);
   const r = await d.pull();
   assert.ok(r.records.length > 0);
-  assert.ok(r.records.every((x) => x.ward === 'ward-1'));
+  assert.ok(r.records.every((x) => x.ward === WARD_1));
   state.preg = r.records.find((x) => x.entity === 'pregnancy' && !x.deleted);
   state.patient = r.records.find((x) => x.entity === 'patient' && !x.deleted);
   assert.ok(state.preg && state.patient);
@@ -120,14 +123,14 @@ test('concurrent non-clinical edits converge with last-writer-wins', async () =>
 
 test('retrying the same event is idempotent', async () => {
   const a = device('sita-phone', state.sita);
-  const e = a.event('visit', { id: crypto.randomUUID(), ward: 'ward-1', vv: {} }, 'CREATE', {
+  const e = a.event('visit', { id: crypto.randomUUID(), ward: WARD_1, vv: {} }, 'CREATE', {
     patientId: state.patient.id, type: 'general', date: '2026-11-20', findings: 'Duplicate test',
   });
   const first = await a.push([e]);
   const second = await a.push([e]);
   assert.equal(first.results[0].status, 'applied');
   assert.equal(second.results[0].status, 'duplicate');
-  state.visit = { id: e.recordId, ward: 'ward-1', vv: {} };
+  state.visit = { id: e.recordId, ward: WARD_1, vv: {} };
 });
 
 test('visits are append-only', async () => {

@@ -9,6 +9,9 @@ const limiter = (windowMs, max) => {
   const recent = (ip) => (hits.get(ip) || []).filter((t) => Date.now() - t < windowMs);
   return { blocked: (ip) => recent(ip).length >= max, record: (ip) => hits.set(ip, [...recent(ip), Date.now()]) };
 };
+// Behind the Cloudflare tunnel every phone arrives through the same local hop,
+// so use the visitor address Cloudflare passes on (falls back to the normal IP).
+const clientIp = (req) => String(req.headers['cf-connecting-ip'] || req.ip);
 const failedLogins = limiter(60_000, 10);
 const signups = limiter(3_600_000, 10);
 
@@ -17,7 +20,7 @@ const publicUser = (u) => ({ id: u.id, username: u.username, name: u.full_name, 
 // Sign in with a username OR an email address.
 export async function login(req, res) {
   const { username, password } = req.body || {};
-  if (failedLogins.blocked(req.ip)) return res.status(429).json({ error: 'Too many sign-in attempts. Wait a minute and try again.' });
+  if (failedLogins.blocked(clientIp(req))) return res.status(429).json({ error: 'Too many sign-in attempts. Wait a minute and try again.' });
   if (!username || !password) return res.status(400).json({ error: 'Enter your email (or username) and password.' });
   const id = String(username).trim().toLowerCase();
   const { rows } = await query(
@@ -25,23 +28,23 @@ export async function login(req, res) {
   );
   const user = rows[0];
   if (!user || !(await bcrypt.compare(String(password), user.password_hash))) {
-    failedLogins.record(req.ip);
-    await audit({ username: id }, 'auth.login_failed', id, null, req.ip);
+    failedLogins.record(clientIp(req));
+    await audit({ username: id }, 'auth.login_failed', id, null, clientIp(req));
     const hint = user?.auth_provider === 'google' ? ' This account was created with Google; use "Continue with Google".' : '';
     return res.status(401).json({ error: `Email/username or password is incorrect.${hint}` });
   }
   if (!user.active) return res.status(403).json({ error: 'This account has been switched off. Contact your administrator.' });
   if (!user.approved) return res.status(403).json({ error: pendingMessage(user).replace('Account created. ', ''), pending: true });
-  await audit({ id: user.id, username: user.username }, 'auth.login', user.username, { deviceId: req.body.deviceId }, req.ip);
+  await audit({ id: user.id, username: user.username }, 'auth.login', user.username, { deviceId: req.body.deviceId }, clientIp(req));
   res.json({ token: signToken(user), user: publicUser(user) });
 }
 
 // Create an account from the sign-up form. Saved in PostgreSQL (users table).
 export async function register(req, res) {
-  if (signups.blocked(req.ip)) return res.status(429).json({ error: 'Too many new accounts from this network. Try again later.' });
-  signups.record(req.ip);
+  if (signups.blocked(clientIp(req))) return res.status(429).json({ error: 'Too many new accounts from this network. Try again later.' });
+  signups.record(clientIp(req));
   const user = await registerAccount(req.body || {});
-  await audit({ id: user.id, username: user.username }, 'auth.register', user.username, { role: user.role, wards: user.wards, approved: user.approved }, req.ip);
+  await audit({ id: user.id, username: user.username }, 'auth.register', user.username, { role: user.role, wards: user.wards, approved: user.approved }, clientIp(req));
   if (!user.approved) return res.status(201).json({ pending: true, message: pendingMessage(user) });
   res.status(201).json({ token: signToken(user), user: publicUser(user) });
 }
@@ -70,15 +73,15 @@ export async function googleLogin(req, res) {
   if (!user) {
     const signup = req.body?.signup;
     if (!signup || !SIGNUP_ROLES[signup.tab]) {
-      await audit({ username: info.email }, 'auth.google_unknown', info.email, null, req.ip);
+      await audit({ username: info.email }, 'auth.google_unknown', info.email, null, clientIp(req));
       return res.status(404).json({ error: `No account uses ${info.email} yet. Tap "Create an account", then "Continue with Google".` });
     }
     user = await registerAccount({ fullName: info.name || info.email.split('@')[0], tab: signup.tab, ward: signup.ward, google: { email: info.email } });
-    await audit({ id: user.id, username: user.username }, 'auth.register_google', info.email, { role: user.role, approved: user.approved }, req.ip);
+    await audit({ id: user.id, username: user.username }, 'auth.register_google', info.email, { role: user.role, approved: user.approved }, clientIp(req));
   }
   if (!user.active) return res.status(403).json({ error: 'This account has been switched off. Contact your administrator.' });
   if (!user.approved) return res.json({ pending: true, message: pendingMessage(user) });
-  await audit({ id: user.id, username: user.username }, 'auth.login_google', info.email, null, req.ip);
+  await audit({ id: user.id, username: user.username }, 'auth.login_google', info.email, null, clientIp(req));
   res.json({ token: signToken(user), user: publicUser(user) });
 }
 

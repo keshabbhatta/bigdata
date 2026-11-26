@@ -2,15 +2,15 @@
 // endpoints let other systems (or Postman) read and write records directly.
 // Writes go through the SAME sync pipeline, so conflict rules still apply.
 import { readQuery, query } from '../database/pool.js';
-import { allowedWards, canAccessWard } from '../middleware/auth.js';
+import { wardPatterns, canAccessWard } from '../middleware/auth.js';
 import { serverWrite, toClientRecord } from '../services/syncService.js';
 
 export async function listPatients(req, res) {
-  const wards = allowedWards(req.user);
+  const wards = wardPatterns(req.user);
   const q = (req.query.q || '').toString().trim();
   const { rows } = await readQuery(
     `SELECT * FROM records WHERE entity = 'patient' AND NOT deleted
-       AND ($1::text[] IS NULL OR ward = ANY($1))
+       AND ($1::text[] IS NULL OR ward LIKE ANY($1))
        AND ($2 = '' OR data->>'name' ILIKE '%' || $2 || '%' OR data->>'village' ILIKE '%' || $2 || '%')
      ORDER BY data->>'name' LIMIT 500`,
     [wards, q],
