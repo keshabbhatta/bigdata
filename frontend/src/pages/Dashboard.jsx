@@ -8,7 +8,7 @@ import { useSync } from '../context/SyncContext.jsx';
 import { usePregnancies } from '../hooks/useRecords.js';
 import { gestationalWeeks, riskFlags } from '../../../shared/schema.js';
 import { Avatar, Badge, Button, Empty, Figures, Panel, PanelHead, SkeletonRows, WeeksBar, cx } from '../components/ui.jsx';
-import { daysFromToday, formatDate, today, wardName, nameParts } from '../utils/format.js';
+import { daysFromToday, formatDate, today, wardFullName, nameParts } from '../utils/format.js';
 
 const VISIT_LABEL = { ANC: 'Antenatal check', PNC: 'Postnatal check', general: 'General visit', immunization: 'Immunization', referral: 'Referral' };
 
@@ -64,7 +64,7 @@ export function Dashboard() {
             <p className="text-white/70">{new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
             <h1 className="mt-1 font-condensed text-[32px] leading-tight font-semibold tracking-tight md:text-[44px]">{greeting}, {nameParts(user.name).greeting}</h1>
             <p className="mt-1 text-white/75">
-              {user.wards.map(wardName).join(', ')}. {due.length ? `${due.length} mother${due.length > 1 ? 's are' : ' is'} due for a check-up this week.` : 'No check-ups due this week.'}
+              {user.wards.map(wardFullName).join('; ')}. {due.length ? `${due.length} mother${due.length > 1 ? 's are' : ' is'} due for a check-up this week.` : 'No check-ups due this week.'}
             </p>
           </div>
           <div className="reveal ml-auto flex flex-wrap gap-2.5" style={{ '--i': 2 }}>

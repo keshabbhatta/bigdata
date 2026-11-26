@@ -47,6 +47,24 @@ export function AuthProvider({ children }) {
     else syncEngine.stop();
   }, [session]);
 
+  // Refresh the signed-in user's role and areas from the server (an admin may have
+  // changed them, or they still hold codes from an older version). Offline: keep the copy.
+  const token = session?.token;
+  useEffect(() => {
+    if (!token || session?.expired) return;
+    api.me().then(({ user: fresh }) => {
+      if (!fresh) return;
+      setSession((cur) => {
+        if (!cur || cur.token !== token) return cur;
+        const user = { ...cur.user, ...fresh };
+        if (JSON.stringify(user) === JSON.stringify(cur.user)) return cur;
+        const next = { ...cur, user };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+        return next;
+      });
+    }).catch(() => {});
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // When the server says the token expired, ask for sign-in but keep all local data.
   useEffect(() => syncEngine.subscribe((s) => {
     if (s.state === 'auth') setSession((cur) => (cur ? { ...cur, expired: true } : cur));

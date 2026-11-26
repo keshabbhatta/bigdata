@@ -8,13 +8,23 @@
 
 import { readQuery } from '../database/pool.js';
 import { allowedWards } from '../middleware/auth.js';
+import { NATION, inScope, isValidArea, scopePatterns } from '../../../shared/areas.js';
 
-const wardFilter = (alias = '') => `($1::text[] IS NULL OR ${alias}ward = ANY($1))`;
+// $1 is a list of LIKE patterns built from area scopes (null = all of Nepal).
+const wardFilter = (alias = '') => `($1::text[] IS NULL OR ${alias}ward LIKE ANY($1))`;
+
+/** The areas to report on: the user's scopes, narrowed to `area` (province, district, local level or ward) when given. */
+function reportScopes(user, area) {
+  const mine = allowedWards(user);
+  if (!area || area === NATION || !isValidArea(area)) return mine;
+  if (!mine) return [area];
+  if (inScope(area, mine)) return [area];                        // area is inside the user's scope
+  const inner = mine.filter((s) => inScope(s, [area]));          // user's scopes inside the area
+  return inner.length ? inner : mine;
+}
 
 export async function getAnalytics(user, wardParam) {
-  let wards = allowedWards(user);
-  if (wardParam) wards = wards ? wards.filter((w) => w === wardParam) : [wardParam];
-  const p = [wards];
+  const p = [scopePatterns(reportScopes(user, wardParam))];
 
   const [totals, sparkRun] = await Promise.all([
     readQuery(
@@ -35,7 +45,7 @@ export async function getAnalytics(user, wardParam) {
     `SELECT coalesce(sum(d.pending_reported), 0) AS pending,
             count(DISTINCT d.user_id) FILTER (WHERE d.last_seen > now() - interval '7 days') AS active_workers
      FROM devices d JOIN users u ON u.id = d.user_id
-     WHERE $1::text[] IS NULL OR u.wards && $1`, p,
+     WHERE $1::text[] IS NULL OR EXISTS (SELECT 1 FROM unnest(u.wards) uw WHERE uw LIKE ANY($1))`, p,
   );
 
   const useSpark = sparkRun.rows.length > 0;

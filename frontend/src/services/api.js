@@ -63,6 +63,7 @@ export const api = {
   login: (username, password) => request('/auth/login', { body: { username, password, deviceId }, auth: false }),
   googleLogin: (credential, signup) => request('/auth/google', { body: { credential, signup }, auth: false }),
   register: (form) => request('/auth/register', { body: form, auth: false }),
+  me: () => request('/auth/me'),
   authConfig: () => request('/auth/config', { auth: false }),
   push: (events) => request('/sync/push', { body: { events }, compress: true }),
   pull: (since, limit = 300) => request('/sync/pull', { body: { since, limit } }),

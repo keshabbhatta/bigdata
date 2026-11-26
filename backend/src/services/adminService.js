@@ -8,7 +8,7 @@ import { coordinationStatus } from '../coordination/coordinator.js';
 import { dbHealth, refreshDbHealth } from '../coordination/failover.js';
 import { storageStatus, putObject, listObjects } from './storageService.js';
 import { getSyncMode } from './clock.js';
-import { validateEmail, validatePassword } from './accountService.js';
+import { validateEmail, validatePassword, cleanScopes } from './accountService.js';
 
 const gzip = promisify(zlib.gzip);
 
@@ -48,6 +48,7 @@ export async function createUser({ username, password, fullName, role, wards, em
   if (role === 'patient' && !patientId) throw Object.assign(new Error('Choose which patient record this account belongs to.'), { status: 400 });
   validatePassword(password);
   if (email?.trim()) email = await validateEmail(email);
+  wards = cleanScopes(wards, role);
   const hash = await bcrypt.hash(password, 10);
   try {
     const { rows } = await query(

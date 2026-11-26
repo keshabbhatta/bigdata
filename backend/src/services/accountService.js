@@ -10,10 +10,22 @@ import { randomBytes } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { query } from '../database/pool.js';
 import { config } from '../config.js';
-import { WARDS } from '../../../shared/schema.js';
+import { NATION, isValidArea, isValidWard, upgradeWard } from '../../../shared/areas.js';
 import { isEmailFormat, normalizeEmail, passwordProblems } from '../../../shared/accounts.js';
 
-const WARD_IDS = WARDS.map((w) => w.id);
+/**
+ * Clean a list of area scopes. Workers need at least one; doctors and admins
+ * default to all of Nepal. Old demo codes ("ward-1") are translated.
+ */
+export function cleanScopes(list, role) {
+  const scopes = [...new Set((Array.isArray(list) ? list : []).map(upgradeWard).filter(isValidArea))];
+  if (scopes.includes(NATION)) return [NATION];
+  if (!scopes.length) {
+    if (role === 'supervisor' || role === 'admin') return [NATION];
+    throw httpError(400, 'Choose at least one area (province, district, municipality or ward).');
+  }
+  return scopes;
+}
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Sign-in tab -> account role. Administrators are never self-registered. */
@@ -67,14 +79,14 @@ export function validatePassword(password) {
 export function pendingMessage(user) {
   return user.role === 'patient'
     ? 'Account created. Your health post will link it to your health record; you can sign in after that.'
-    : 'Account created. Doctor accounts can see every ward, so an administrator approves them first. You can sign in after approval.';
+    : 'Account created. Doctor accounts can see many wards, so an administrator approves them first. You can sign in after approval.';
 }
 
 /**
  * Create an account from the sign-up form, or from a verified Google sign-in
  * (`google = { email }`, no password needed).
  */
-export async function registerAccount({ fullName, email, password, tab, ward, google = null }) {
+export async function registerAccount({ fullName, email, password, tab, ward, area, google = null }) {
   const role = SIGNUP_ROLES[tab];
   if (!role) throw httpError(400, 'Choose Health worker, Doctor or Patient.');
   const name = String(fullName || '').trim().replace(/\s+/g, ' ');
@@ -82,10 +94,14 @@ export async function registerAccount({ fullName, email, password, tab, ward, go
   const cleanEmail = google ? normalizeEmail(google.email) : await validateEmail(email);
   if (!google) validatePassword(password);
 
+  // Doctors choose the area they work in (all of Nepal, a province, district or
+  // local level); health workers and patients choose one real ward.
   let wards;
-  if (role === 'supervisor') wards = WARD_IDS;
-  else if (WARD_IDS.includes(ward)) wards = [ward];
-  else throw httpError(400, 'Choose your ward.');
+  if (role === 'supervisor') {
+    if (area && !isValidArea(area)) throw httpError(400, 'Choose a valid area.');
+    wards = [area || NATION];
+  } else if (isValidWard(upgradeWard(ward))) wards = [upgradeWard(ward)];
+  else throw httpError(400, 'Choose your province, district, municipality and ward.');
 
   // Google accounts get a random password nobody knows; they sign in with Google.
   const hash = await bcrypt.hash(google ? randomBytes(32).toString('hex') : password, 10);
@@ -153,12 +169,8 @@ export async function updateUser(actor, id, changes = {}) {
     cols.wards = [rec.ward];
   } else {
     if (user.patient_id) cols.patient_id = null;
-    if (next.role === 'supervisor' || next.role === 'admin') {
-      cols.wards = Array.isArray(changes.wards) && changes.wards.length ? changes.wards.filter((w) => WARD_IDS.includes(w)) : (user.role === next.role ? user.wards : WARD_IDS);
-    } else if (changes.wards !== undefined || user.role !== next.role) {
-      const wards = (Array.isArray(changes.wards) ? changes.wards : user.wards).filter((w) => WARD_IDS.includes(w));
-      if (!wards.length) throw httpError(400, 'Choose at least one ward for a health worker.');
-      cols.wards = wards;
+    if (changes.wards !== undefined || user.role !== next.role) {
+      cols.wards = cleanScopes(changes.wards !== undefined ? changes.wards : user.wards, next.role);
     }
   }
   if (changes.approved === true) cols.approved = true;

@@ -8,6 +8,8 @@ import { useSync } from '../context/SyncContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Badge, Empty, Figures, PageHead, Panel, PanelHead, Select, Table } from '../components/ui.jsx';
 import { formatDateTime, relativeTime, wardName } from '../utils/format.js';
+import { AreaPicker } from '../components/AreaPicker.jsx';
+import { NATION, isValidWard } from '../../../shared/areas.js';
 
 const C = { pine: '#0e6b5c', lali: '#c42847', marigold: '#e9a23b', sky: '#2f6fb0', ink: '#24364f', grid: '#e6ebf0', soft: '#5b6b7f' };
 const TYPE_COLORS = { ANC: C.lali, general: C.ink, immunization: C.sky, referral: C.marigold, PNC: C.pine };
@@ -24,10 +26,11 @@ export function Analytics() {
 
   useEffect(() => {
     if (sync.isOffline) return;
-    api.analytics(ward).then((d) => {
+    const area = ward === NATION ? '' : ward;
+    api.analytics(area).then((d) => {
       setData(d);
       setError('');
-      if (!ward) localStorage.setItem(CACHE, JSON.stringify({ ...d, cachedAt: Date.now() }));
+      if (!area) localStorage.setItem(CACHE, JSON.stringify({ ...d, cachedAt: Date.now() }));
     }).catch((e) => setError(e.message));
   }, [ward, sync.isOffline, sync.lastSyncAt]);
 
@@ -47,11 +50,11 @@ export function Analytics() {
   return (
     <>
       <PageHead title="Analytics" subtitle="Health activity across villages. Heavy numbers are computed by Spark jobs from the Kafka event stream, separately from the app's own database work.">
-        {user.wards.length > 1 && (
-          <Select className="w-auto" value={ward} onChange={(e) => setWard(e.target.value)} aria-label="Ward">
-            <option value="">All wards</option>
-            {user.wards.map((w) => <option key={w} value={w}>{wardName(w)}</option>)}
-          </Select>
+        {!(user.wards.length === 1 && isValidWard(user.wards[0])) && (
+          <div className="w-full rounded-xl border border-line bg-white p-3 md:w-[560px]">
+            <div className="mb-2 text-[13px] font-semibold text-ink-2">Show numbers for</div>
+            <AreaPicker value={ward} onChange={setWard} level="any" within={user.role === 'admin' ? null : user.wards} allowNation />
+          </div>
         )}
       </PageHead>
 

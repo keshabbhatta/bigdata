@@ -9,7 +9,7 @@ import { useAuth, isStaff, ROLE_NAMES } from '../context/AuthContext.jsx';
 import { useSync } from '../context/SyncContext.jsx';
 import { SignalRibbon } from './SignalRibbon.jsx';
 import { cx } from './ui.jsx';
-import { wardName, relativeTime, nameParts } from '../utils/format.js';
+import { scopesLabel, relativeTime, nameParts } from '../utils/format.js';
 
 const BARS = { real: 4, '3g': 3, '2g': 2, flaky: 1, offline: 0 };
 
@@ -87,7 +87,7 @@ function UserMenu() {
         <div role="menu" className="absolute top-12 right-0 z-50 w-64 origin-top-right animate-pop overflow-hidden rounded-2xl border border-line bg-white text-ink shadow-2xl">
           <div className="bg-brand px-4 py-3.5 text-white">
             <div className="font-semibold">{user.name}</div>
-            <div className="text-[13px] text-white/75">{ROLE_NAMES[user.role]}, {user.wards.length > 1 ? `${user.wards.length} wards` : wardName(user.wards[0])}</div>
+            <div className="text-[13px] text-white/75">{ROLE_NAMES[user.role]}, {scopesLabel(user.wards)}</div>
           </div>
           <Link to="/sync" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-3 text-sm text-ink no-underline hover:bg-paper">
             <RefreshCw size={16} className="text-ink-soft" /> Sync status
