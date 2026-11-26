@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   WifiOff, BatteryLow, Users, Smartphone, HardDrive, RefreshCw, GitMerge, Footprints, Stethoscope, HeartPulse,
-  ShieldCheck, ArrowDown, CheckCircle2, Signal, Database, Radio, Zap, Server, Boxes, Activity, Crown,
+  ShieldCheck, ArrowDown, ArrowRight, CheckCircle2, Signal, Database, Radio, Zap, Server, Boxes, Activity, Crown,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Button, cx } from '../components/ui.jsx';
@@ -218,9 +218,9 @@ function Pipeline() {
 /* ------------------------------------------------------------------ page */
 
 const PROBLEMS = [
-  { icon: WifiOff, title: 'The signal comes and goes', text: 'Volunteers walk between households on 2G and 3G that drops for hours. A cloud-only app simply stops working.' },
-  { icon: BatteryLow, title: 'Power cuts that last days', text: 'Phones may not reach a server for days. Records must stay safe on the phone, through restarts and flat batteries.' },
-  { icon: Users, title: 'Two workers, one family', text: 'Household and referral records are shared. When two people update them offline, simple caching silently loses one update.' },
+  { slug: 'signal', icon: WifiOff, title: 'The signal comes and goes', text: 'Volunteers walk between households on 2G and 3G that drops for hours. A cloud-only app simply stops working.' },
+  { slug: 'power', icon: BatteryLow, title: 'Power cuts that last days', text: 'Phones may not reach a server for days. Records must stay safe on the phone, through restarts and flat batteries.' },
+  { slug: 'shared-records', icon: Users, title: 'Two workers, one family', text: 'Household and referral records are shared. When two people update them offline, simple caching silently loses one update.' },
 ];
 
 const STEPS = [
@@ -356,11 +356,15 @@ export function Home() {
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {PROBLEMS.map((p, i) => (
               <Reveal key={p.title} delay={i * 120}>
-                <div className="group h-full rounded-3xl border border-line bg-paper p-7 transition-all duration-300 hover:-translate-y-1 hover:border-pine/30 hover:bg-white hover:shadow-xl">
+                <Link to={`/problems/${p.slug}`} aria-label={`${p.title}: read the full explanation`}
+                  className="group flex h-full flex-col rounded-3xl border border-line bg-paper p-7 text-ink no-underline transition-all duration-300 hover:-translate-y-1 hover:border-pine/30 hover:bg-white hover:shadow-xl focus-visible:-translate-y-1">
                   <span className="grid size-12 place-items-center rounded-2xl bg-white text-lali shadow-sm transition-transform duration-300 group-hover:scale-110"><p.icon size={22} /></span>
                   <h3 className="mt-5 text-xl font-semibold">{p.title}</h3>
-                  <p className="mt-2 text-ink-soft">{p.text}</p>
-                </div>
+                  <p className="mt-2 flex-1 text-ink-soft">{p.text}</p>
+                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-pine">
+                    Read the full explanation <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                  </span>
+                </Link>
               </Reveal>
             ))}
           </div>

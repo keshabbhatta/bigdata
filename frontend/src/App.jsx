@@ -18,6 +18,7 @@ import { MyHealth } from './pages/MyHealth.jsx';
 const Analytics = lazy(() => import('./pages/Analytics.jsx').then((m) => ({ default: m.Analytics })));
 const Admin = lazy(() => import('./pages/Admin.jsx').then((m) => ({ default: m.Admin })));
 const Home = lazy(() => import('./pages/Home.jsx').then((m) => ({ default: m.Home })));
+const ProblemDetail = lazy(() => import('./pages/ProblemDetail.jsx').then((m) => ({ default: m.ProblemDetail })));
 
 function RequireAuth({ children }) {
   const { session } = useAuth();
@@ -49,6 +50,7 @@ export default function App() {
             <Suspense fallback={null}>
               <Routes>
                 <Route path="/home" element={<Home />} />
+                <Route path="/problems/:slug" element={<ProblemDetail />} />
                 <Route path="/login" element={<Login />} />
                 <Route element={<RequireAuth><Layout /></RequireAuth>}>
                   <Route index element={<Start />} />
