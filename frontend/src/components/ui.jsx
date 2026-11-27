@@ -9,10 +9,11 @@ export const cx = (...c) => c.filter(Boolean).join(' ');
 const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 /** Counts from the previous value up to `value` (used for the big figures). */
-export function useCountUp(value, duration = 900) {
+export function useCountUp(value, duration = 900, enabled = true) {
   const [shown, setShown] = useState(typeof value === 'number' ? 0 : value);
   const from = useRef(0);
   useEffect(() => {
+    if (!enabled) return undefined;
     if (typeof value !== 'number') { setShown(value); return undefined; }
     if (reducedMotion()) { setShown(value); return undefined; }
     const start = performance.now();
@@ -27,7 +28,7 @@ export function useCountUp(value, duration = 900) {
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [value, duration]);
+  }, [value, duration, enabled]);
   return shown;
 }
 

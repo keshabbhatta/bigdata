@@ -66,6 +66,10 @@
   @keyframes float { 50% { transform: translateY(-12px); } }
   @keyframes dash { to { stroke-dashoffset: -28; } }
   @keyframes twinkle { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.9; } }
+  @keyframes glow-cycle {
+    0%, 100% { box-shadow: 0 0 6px 1px rgba(236, 72, 153, .24), 0 0 12px 2px rgba(220, 38, 38, .16); }
+    50% { box-shadow: 0 0 10px 2px rgba(236, 72, 153, .3), 0 0 18px 4px rgba(220, 38, 38, .24); }
+  }
 }
 
 @layer base {
@@ -76,6 +80,14 @@
   }
   :focus-visible { @apply rounded outline-3 outline-offset-2 outline-sky; }
   ::selection { background: var(--color-marigold); color: var(--color-ink); }
+}
+
+@layer components {
+  .photo-float { transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1), filter 280ms ease; }
+  @media (hover: hover) {
+    .photo-float:hover { transform: translateY(-5px) scale(1.02); filter: drop-shadow(0 12px 12px rgba(28, 38, 56, .2)); }
+  }
+  .photo-float:active { transform: translateY(-3px) scale(1.015); }
 }
 
 /* Brand colour of the navigation bar and dark bands: the deep blue of the sari border. */
@@ -101,6 +113,18 @@
   animation: grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+@utility cta-glow {
+  animation: glow-cycle 2.4s ease-in-out infinite;
+}
+
+@utility cta-gradient {
+  background-image: linear-gradient(110deg, #db2777 0%, #ec4899 52%, #dc2626 100%);
+}
+
+@utility cta-sky {
+  background-image: linear-gradient(110deg, #075985, #0369a1 55%, #075985);
+}
+
 /* Loading placeholders. */
 @utility skeleton {
   background: linear-gradient(90deg, var(--color-line-soft) 25%, #fbf8f2 50%, var(--color-line-soft) 75%);
@@ -115,4 +139,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; animation-delay: 0ms !important; transition-duration: 0.001ms !important; }
+  .cta-glow { animation: none !important; box-shadow: 0 0 6px 1px rgba(236, 72, 153, .24), 0 0 12px 2px rgba(220, 38, 38, .16); }
+  .photo-float { transition: none !important; transform: none !important; filter: none !important; }
 }

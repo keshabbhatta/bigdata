@@ -1,13 +1,13 @@
 // Public home page: what the project is, who it is for and how it works,
 // illustrated with real photographs of health work in Nepal.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   WifiOff, BatteryLow, Users, Smartphone, HardDrive, RefreshCw, GitMerge, Footprints, Stethoscope, HeartPulse,
   ShieldCheck, ArrowRight, CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Button, cx } from '../components/ui.jsx';
+import { Button, cx, useCountUp } from '../components/ui.jsx';
 import { Photo, Credit } from '../components/Photo.jsx';
 import { PHOTOS } from '../content/photos.js';
 import { t, num, LanguageSwitcher } from '../i18n/index.jsx';
@@ -90,6 +90,37 @@ function PhoneMockup() {
   );
 }
 
+function BloodPressureReading({ reading }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  const [systolic, diastolic] = reading.split('/').map(Number);
+  const shownSystolic = useCountUp(systolic, 1300, visible);
+  const shownDiastolic = useCountUp(diastolic, 1300, visible);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') {
+      setVisible(true);
+      return undefined;
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setVisible(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.4 });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} className="mt-1 font-condensed text-[28px] font-semibold">
+      <span aria-hidden="true">{num(shownSystolic)}/{num(shownDiastolic)}</span>
+      <span className="sr-only">{t(reading)}</span>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ page */
 
 const PROBLEMS = [
@@ -114,7 +145,54 @@ const ROLES = [
 
 export function Home() {
   const { session } = useAuth();
+  const tagline = t("For Nepal's female community health volunteers");
+  const [typedTagline, setTypedTagline] = useState('');
   const cta = session ? { to: '/', label: t('Open the app') } : { to: '/login', label: t('Try the live demo') };
+  const ctaColor = session ? 'cta-gradient' : 'cta-sky';
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      setTypedTagline(tagline);
+      return undefined;
+    }
+
+    const segmenter = typeof Intl.Segmenter === 'function'
+      ? new Intl.Segmenter(undefined, { granularity: 'grapheme' })
+      : null;
+    const characters = segmenter
+      ? Array.from(segmenter.segment(tagline), ({ segment }) => segment)
+      : Array.from(tagline);
+    let length = 0;
+    let deleting = false;
+    let pause = 0;
+    setTypedTagline('');
+    const timer = setInterval(() => {
+      if (pause > 0) {
+        pause -= 1;
+        return;
+      }
+
+      if (deleting) {
+        length = Math.max(0, length - 1);
+        setTypedTagline(characters.slice(0, length).join(''));
+        if (length === 0) {
+          deleting = false;
+          pause = 10;
+        }
+        return;
+      }
+
+      if (length === characters.length) {
+        deleting = true;
+        pause = 30;
+        return;
+      }
+
+      length += 1;
+      setTypedTagline(characters.slice(0, length).join(''));
+    }, 35);
+    return () => clearInterval(timer);
+  }, [tagline]);
 
   return (
     <div className="min-h-full scroll-smooth bg-paper">
@@ -144,7 +222,13 @@ export function Home() {
       {/* ---------- hero ---------- */}
       <section className="mx-auto grid max-w-[1180px] items-center gap-10 px-4 pt-10 pb-16 md:px-8 md:pt-16 md:pb-24 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
         <div>
-          <p className="text-[15px] font-semibold text-pine">{t("For Nepal's female community health volunteers")}</p>
+          <p className="text-[15px] font-semibold text-green-700">
+            <span className="sr-only">{tagline}</span>
+            <span aria-hidden="true">
+              {typedTagline}
+              <span className="ml-px inline-block h-[1em] translate-y-0.5 motion-safe:animate-pulse border-r-2 border-pine" />
+            </span>
+          </p>
           <h1 className="mt-3 max-w-[18ch] font-serif text-[36px] leading-[1.1] font-semibold text-ink md:text-[52px]">
             {t('Every reading saved, even where the signal never reaches.')}
           </h1>
@@ -152,7 +236,7 @@ export function Home() {
             {t('Sewika lets community health volunteers record mothers, pregnancies and visits with no internet, then synchronizes safely when a connection appears. When two workers disagree, both readings are kept for a doctor. Nothing is silently overwritten.')}
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Button as={Link} to={cta.to} className="h-12 px-6 text-base">{cta.label} <ArrowRight size={18} /></Button>
+            <Button as={Link} to={cta.to} className={`${ctaColor} cta-glow h-12 px-6 text-base hover:brightness-110`}>{cta.label} <ArrowRight size={18} /></Button>
             <Button as="a" href="#how" variant="ghost" className="h-12 px-6 text-base">{t('How it works')}</Button>
           </div>
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-ink-2">
@@ -230,7 +314,7 @@ export function Home() {
               {[["Sita's phone, offline", '120/80', 'Blood pressure, 10:12'], ["Gita's phone, offline", '140/90', 'Blood pressure, 10:40']].map(([who, bp, when]) => (
                 <div key={who} className="rounded-lg bg-white p-4">
                   <div className="flex items-center gap-1.5 text-xs text-ink-soft"><Smartphone size={13} /> {t(who)}</div>
-                  <div className="mt-1 font-condensed text-[28px] font-semibold">{bp}</div>
+                  <BloodPressureReading reading={bp} />
                   <div className="text-xs text-ink-soft">{t(when)}</div>
                 </div>
               ))}
@@ -272,7 +356,7 @@ export function Home() {
 
       {/* ---------- call to action ---------- */}
       <section className="relative overflow-hidden bg-ink text-white">
-        <img src={PHOTOS.terraces.src} alt={t(PHOTOS.terraces.alt)} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={PHOTOS.terraces.src} alt={t(PHOTOS.terraces.alt)} loading="lazy" className="photo-float absolute inset-0 h-full w-full object-cover" />
         <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-ink/90 via-ink/70 to-ink/20" />
         <div className="relative mx-auto max-w-[1180px] px-4 py-20 md:px-8 md:py-28">
           <h2 className="max-w-[18ch] font-serif text-[32px] leading-[1.15] font-semibold md:text-[44px]">{t('See it working')}</h2>
@@ -280,7 +364,7 @@ export function Home() {
             {t('Sign in as a health volunteer, a doctor or a patient with the demo accounts. Turn the network off from the Sync screen and keep working.')}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Button as={Link} to={cta.to} variant="accent" className="h-12 px-7 text-base">{cta.label}</Button>
+            <Button as={Link} to={cta.to} variant="accent" className={`${ctaColor} cta-glow h-12 px-7 text-base text-white hover:brightness-110`}>{cta.label}</Button>
             {!session && <Button as={Link} to="/login?mode=signup" variant="light" className="h-12 px-7 text-base">{t('Create an account')}</Button>}
           </div>
           <p className="mt-12 text-[13px] text-white/60">{t(PHOTOS.terraces.caption)} <Credit photo={PHOTOS.terraces} className="text-white/45" /></p>
@@ -293,7 +377,7 @@ export function Home() {
             <img src="/favicon.svg" alt="" className="size-7 rounded-md" />
             <span><b className="font-serif text-ink">Sewika</b>. {t('Final-semester Big Data project.')} {t('Demo data is synthetic. Not for clinical use.')}</span>
           </span>
-          <span className="md:text-right">{t('Photos from Wikimedia Commons, credited under each photo. The people shown are not users of this app.')}</span>
+          <span className="md:text-right">{t('Photo credits and licenses are shown where required. The people shown are not users of this app.')}</span>
         </div>
       </footer>
     </div>

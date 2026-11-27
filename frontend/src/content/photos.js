@@ -18,10 +18,9 @@ export const PHOTOS = {
   },
   checkup: {
     src: '/images/bp-check.jpg',
-    alt: 'A health worker in a white coat measures a woman’s blood pressure at a desk.',
-    caption: 'A blood pressure check at Batulechaur Health Post, Pokhara.',
-    credit: 'Department of Foreign Affairs and Trade (Australia)', license: 'CC BY 4.0', licenseUrl: 'https://creativecommons.org/licenses/by/4.0',
-    page: 'https://commons.wikimedia.org/wiki/File:Health_Worker_Bisnu_Poudel_check_the_blood_pressure_of_Sabina_Rai_at_the_temporary_Batulechaur_Health_Post,_Pokhara,_Nepal_(10700206874).jpg',
+    alt: "A health worker checks an older man's blood pressure with help from another health worker.",
+    caption: 'A blood pressure check during a community health visit.',
+    credit: null, license: null,
   },
   terraces: {
     src: '/images/terraces.jpg',
