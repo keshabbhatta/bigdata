@@ -174,7 +174,7 @@ export function Layout() {
             <Link to="/" className="mr-2 flex items-center gap-2.5 text-white no-underline lg:mr-6">
               <img src="/favicon.svg" alt="" className="size-9 rounded-xl ring-1 ring-white/20" />
               <span className="hidden leading-tight sm:block">
-                <strong className="block font-condensed text-[15px] font-semibold tracking-wide whitespace-nowrap sm:text-lg">RuralHealth Sync</strong>
+                <strong className="block font-condensed text-[15px] font-semibold tracking-wide whitespace-nowrap sm:text-lg">Sewika</strong>
                 <span className="hidden text-[11px] text-white/60 sm:block">{t('Community health records')}</span>
               </span>
             </Link>

@@ -2,31 +2,34 @@
    this file only defines the theme (palette, fonts, animations). */
 @import "tailwindcss";
 
-/* Palette taken from the hills where the app is used:
-   ink = night-sky navy, paper = snowfield, pine = forest teal (primary / synced),
+/* Palette taken from Nepal's female community health volunteers (FCHVs) and their villages:
+   pine  = the volunteer's blue sari (primary actions, synced),
+   sky   = the darker blue of the sari border (information),
+   lali  = sindoor and tika crimson (conflict / danger),
    marigold = festival marigold (offline / waiting / highlights),
-   lali = lali gurans rhododendron (conflict / danger), sky = information. */
+   ink   = deep indigo for text, paper = handmade lokta paper. */
 @theme {
-  --color-ink: #12203a;
-  --color-ink-2: #1e3150;
-  --color-ink-soft: #5a6b80;
-  --color-line: #dce3ea;
-  --color-line-soft: #eaeff4;
-  --color-paper: #f2f5f9;
-  --color-pine: #0d7a68;
-  --color-pine-deep: #095c4f;
-  --color-pine-wash: #e0f2ee;
-  --color-mint: #5fe0c0;
-  --color-marigold: #f2a93b;
-  --color-marigold-deep: #9a5f06;
-  --color-marigold-wash: #fef3e0;
-  --color-lali: #d23a5f;
-  --color-lali-deep: #a0243f;
-  --color-lali-wash: #fce8ed;
-  --color-sky: #2f6fb0;
-  --color-sky-wash: #e5eff9;
+  --color-ink: #1c2638;
+  --color-ink-2: #2d3a50;
+  --color-ink-soft: #5f6878;
+  --color-line: #e2dacb;
+  --color-line-soft: #eee8dc;
+  --color-paper: #f7f3eb;
+  --color-pine: #0b6f93;
+  --color-pine-deep: #08546f;
+  --color-pine-wash: #e1f0f6;
+  --color-mint: #7ccbe6;
+  --color-marigold: #eaa53c;
+  --color-marigold-deep: #8f5a0b;
+  --color-marigold-wash: #fcf0dc;
+  --color-lali: #c22a40;
+  --color-lali-deep: #95192d;
+  --color-lali-wash: #fbe8ea;
+  --color-sky: #284f8a;
+  --color-sky-wash: #e6ecf6;
 
   --font-sans: 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, -apple-system, 'Segoe UI', 'Nirmala UI', sans-serif;
+  --font-serif: 'IBM Plex Serif', 'IBM Plex Sans Devanagari', Georgia, 'Nirmala UI', serif;
   --font-condensed: 'IBM Plex Sans Condensed', 'IBM Plex Sans', 'IBM Plex Sans Devanagari', system-ui, 'Nirmala UI', sans-serif;
 
   --animate-flow: flow 0.9s linear infinite;
@@ -75,9 +78,9 @@
   ::selection { background: var(--color-marigold); color: var(--color-ink); }
 }
 
-/* Brand gradient used by the navigation bar and hero bands. */
+/* Brand colour of the navigation bar and dark bands: the deep blue of the sari border. */
 @utility bg-brand {
-  background-image: linear-gradient(115deg, #12203a 0%, #16304d 48%, #0b5a4e 100%);
+  background-color: #17325a;
 }
 
 /* The moving diagonal stripes shown while data is syncing. */
@@ -100,7 +103,7 @@
 
 /* Loading placeholders. */
 @utility skeleton {
-  background: linear-gradient(90deg, var(--color-line-soft) 25%, #f7f9fb 50%, var(--color-line-soft) 75%);
+  background: linear-gradient(90deg, var(--color-line-soft) 25%, #fbf8f2 50%, var(--color-line-soft) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s linear infinite;
 }

@@ -1,52 +1,27 @@
-// Public home page: what the project is, who it is for, how it works and what
-// it is built with. Long-scroll, with sections that animate in as you reach them.
-import { useEffect, useRef, useState } from 'react';
+// Public home page: what the project is, who it is for and how it works,
+// illustrated with real photographs of health work in Nepal.
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   WifiOff, BatteryLow, Users, Smartphone, HardDrive, RefreshCw, GitMerge, Footprints, Stethoscope, HeartPulse,
-  ShieldCheck, ArrowDown, ArrowRight, CheckCircle2, Signal, Database, Radio, Zap, Server, Boxes, Activity, Crown,
+  ShieldCheck, ArrowRight, CheckCircle2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Button, cx } from '../components/ui.jsx';
+import { Photo, Credit } from '../components/Photo.jsx';
+import { PHOTOS } from '../content/photos.js';
 import { t, num, LanguageSwitcher } from '../i18n/index.jsx';
-
-/* ---------------------------------------------------------------- helpers */
-
-function useInView(options = { threshold: 0.2 }) {
-  const ref = useRef(null);
-  const [seen, setSeen] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || seen) return undefined;
-    if (!('IntersectionObserver' in window)) { setSeen(true); return undefined; }
-    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setSeen(true); io.disconnect(); } }, options);
-    io.observe(el);
-    return () => io.disconnect();
-  }, [seen]); // eslint-disable-line react-hooks/exhaustive-deps
-  return [ref, seen];
-}
-
-/** Fades and lifts its children into place the first time they scroll into view. */
-function Reveal({ children, delay = 0, className, as: As = 'div' }) {
-  const [ref, seen] = useInView();
-  return (
-    <As ref={ref} className={cx('transition-all duration-700 ease-out', seen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0', className)}
-      style={{ transitionDelay: `${delay}ms` }}>
-      {children}
-    </As>
-  );
-}
 
 function usePhase(count, ms) {
   const [phase, setPhase] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setPhase((p) => (p + 1) % count), ms);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setPhase((p) => (p + 1) % count), ms);
+    return () => clearInterval(timer);
   }, [count, ms]);
   return phase;
 }
 
-const STARS = Array.from({ length: 40 }, (_, i) => ({ left: `${(i * 37.7) % 100}%`, top: `${(i * 53.3) % 60}%`, d: `${(i % 6) * 0.6}s`, s: i % 4 === 0 ? 3 : 2 }));
+const H2 = 'font-serif text-[30px] leading-[1.15] font-semibold text-ink md:text-[40px]';
 
 /* ------------------------------------------------------------ phone mockup */
 
@@ -62,12 +37,12 @@ const PHONE_ROWS = [
 ];
 
 function PhoneMockup() {
-  const phase = usePhase(3, 2600);
+  const phase = usePhase(3, 2800);
   const st = PHONE_STATES[phase];
   return (
-    <div className="relative mx-auto w-[270px] animate-float-slow sm:w-[290px]">
-      <div className="rounded-[2.6rem] border-[10px] border-[#0b1424] bg-[#0b1424] shadow-[0_40px_80px_-20px_rgba(0,0,0,.6)] ring-1 ring-white/10">
-        <div className="overflow-hidden rounded-[2rem] bg-paper text-ink">
+    <div className="mx-auto w-[260px] sm:w-[280px]">
+      <div className="rounded-[2.4rem] border-[9px] border-ink bg-ink shadow-[0_24px_50px_-24px_rgba(28,38,56,.55)]">
+        <div className="overflow-hidden rounded-[1.8rem] bg-paper text-ink">
           <div className="flex items-center justify-between bg-brand px-5 pt-3 pb-2 text-[10px] text-white/80">
             <span>9:41</span><span className="h-4 w-16 rounded-full bg-black/40" /><span>{phase === 0 ? t('No signal') : '2G'}</span>
           </div>
@@ -83,25 +58,24 @@ function PhoneMockup() {
           </div>
           <div className="grid grid-cols-2 gap-2 p-3">
             {[['30', 'Patients'], ['6', 'Pregnancies']].map(([n, l]) => (
-              <div key={l} className="rounded-xl bg-white p-2.5 shadow-sm">
+              <div key={l} className="rounded-lg border border-line-soft bg-white p-2.5">
                 <div className="font-condensed text-xl font-semibold">{num(n)}</div>
                 <div className="text-[10px] text-ink-soft">{t(l)}</div>
               </div>
             ))}
           </div>
-          <div className="mx-3 mb-3 overflow-hidden rounded-xl bg-white shadow-sm">
+          <div className="mx-3 mb-3 overflow-hidden rounded-lg border border-line-soft bg-white">
             {PHONE_ROWS.map((r, i) => (
               <div key={r.name} className="flex items-center gap-2.5 border-t border-line-soft px-3 py-2.5 first:border-t-0">
-                <span className="grid size-7 flex-none place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: ['#0d7a68', '#2f6fb0', '#a0243f'][i] }}>
+                <span className="grid size-7 flex-none place-items-center rounded-full text-[10px] font-bold text-white" style={{ background: ['#0b6f93', '#284f8a', '#95192d'][i] }}>
                   {r.name.split(' ').map((p) => p[0]).join('')}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[11px] font-semibold">{t(r.name)}</div>
                   <div className="truncate text-[10px] text-ink-soft">{t(r.what)}</div>
                 </div>
-                <span className={cx('rounded-full px-1.5 py-0.5 text-[9px] font-bold transition-all duration-500',
-                  phase === 2 ? 'bg-pine-wash text-pine-deep' : 'bg-marigold-wash text-marigold-deep')}
-                  style={{ transitionDelay: `${i * 180}ms` }}>
+                <span className={cx('rounded-full px-1.5 py-0.5 text-[9px] font-bold transition-colors duration-500',
+                  phase === 2 ? 'bg-pine-wash text-pine-deep' : 'bg-marigold-wash text-marigold-deep')}>
                   {phase === 2 ? t('Synced') : t('On phone')}
                 </span>
               </div>
@@ -112,107 +86,7 @@ function PhoneMockup() {
           </div>
         </div>
       </div>
-
-      {/* floating cards around the phone */}
-      <div className="absolute top-[150px] -left-36 hidden w-48 animate-float rounded-2xl bg-white p-3 text-ink shadow-2xl sm:block [animation-delay:-2s]">
-        <div className="flex items-center gap-1.5 text-[11px] font-bold text-lali-deep"><GitMerge size={13} /> {t('Two readings kept')}</div>
-        <div className="mt-1.5 flex gap-1.5 font-condensed text-lg font-semibold">
-          <span className="rounded-lg bg-paper px-2">120/80</span><span className="rounded-lg bg-paper px-2">140/90</span>
-        </div>
-        <div className="mt-1 text-[10px] text-ink-soft">{t('A doctor chooses. Nothing is overwritten.')}</div>
-      </div>
-      <div className="absolute -right-24 bottom-16 hidden animate-float rounded-2xl bg-white px-3 py-2.5 text-ink shadow-2xl sm:block [animation-delay:-4s]">
-        <div className="text-[10px] text-ink-soft">{t('Sync batch, gzip')}</div>
-        <div className="font-condensed text-lg font-semibold text-pine">24 KB → 4 KB</div>
-      </div>
     </div>
-  );
-}
-
-/* ----------------------------------------------------------- conflict demo */
-
-function ConflictDemo() {
-  const [ref, seen] = useInView({ threshold: 0.3 });
-  const phase = usePhase(4, 2200);
-  const p = seen ? phase : 0;
-  const card = 'absolute top-0 w-[42%] rounded-2xl bg-white p-4 text-ink shadow-xl transition-all duration-700 ease-out';
-  return (
-    <div ref={ref} className="relative h-[330px] w-full">
-      <div className={cx(card, p >= 1 ? 'left-[5%] translate-y-2 rotate-0' : 'left-0 -rotate-3')}>
-        <div className="flex items-center gap-2 text-xs text-ink-soft"><Smartphone size={14} /> {t("Sita's phone, offline")}</div>
-        <div className="mt-2 font-condensed text-3xl font-semibold">120/80</div>
-        <div className="text-xs text-ink-soft">{t('Blood pressure, 10:12')}</div>
-      </div>
-      <div className={cx(card, p >= 1 ? 'right-[5%] translate-y-2 rotate-0' : 'right-0 rotate-3')}>
-        <div className="flex items-center gap-2 text-xs text-ink-soft"><Smartphone size={14} /> {t("Gita's phone, offline")}</div>
-        <div className="mt-2 font-condensed text-3xl font-semibold">140/90</div>
-        <div className="text-xs text-ink-soft">{t('Blood pressure, 10:40')}</div>
-      </div>
-      <svg className="absolute top-[118px] left-1/2 h-16 w-[60%] -translate-x-1/2" viewBox="0 0 300 60" fill="none" aria-hidden>
-        <path d="M20 0 C20 40 150 20 150 58 M280 0 C280 40 150 20 150 58" stroke="#5fe0c0" strokeWidth="2.5" strokeDasharray="6 8"
-          className={cx('animate-dash transition-opacity duration-500', p >= 1 ? 'opacity-100' : 'opacity-0')} />
-      </svg>
-      <div className={cx('absolute top-[190px] left-1/2 w-[78%] -translate-x-1/2 rounded-2xl border-2 bg-white p-4 text-ink shadow-2xl transition-all duration-700 ease-out',
-        p >= 2 ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-4 scale-95 opacity-0',
-        p === 3 ? 'border-pine' : 'border-lali')}>
-        {p === 3 ? (
-          <>
-            <div className="flex items-center gap-2 text-sm font-bold text-pine-deep"><CheckCircle2 size={16} /> {t('Resolved by Dr. Sharma')}</div>
-            <div className="mt-1 text-sm text-ink-2">{t('Kept 140/90 after re-checking at the health post. Every phone receives the decision.')}</div>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-2 text-sm font-bold text-lali-deep"><GitMerge size={16} /> {t('Conflicting readings, both kept')}</div>
-            <div className="mt-1 text-sm text-ink-2">{t('A blood pressure value is clinical, so the server never picks one silently. It waits for a doctor.')}</div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------- pipeline diagram */
-
-function Pipeline() {
-  const node = (x, y, w, label, sub, color) => (
-    <g transform={`translate(${x} ${y})`}>
-      <rect width={w} height="58" rx="14" fill="#fff" stroke={color} strokeWidth="2" />
-      <text x={w / 2} y="26" textAnchor="middle" fontSize="15" fontWeight="600" fill="#12203a" fontFamily="IBM Plex Sans, IBM Plex Sans Devanagari, sans-serif">{t(label)}</text>
-      <text x={w / 2} y="44" textAnchor="middle" fontSize="11.5" fill="#5a6b80" fontFamily="IBM Plex Sans, IBM Plex Sans Devanagari, sans-serif">{t(sub)}</text>
-    </g>
-  );
-  const flow = (d, color = '#0d7a68') => <path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeDasharray="6 8" className="animate-dash" markerEnd="url(#arrow)" />;
-  return (
-    <svg viewBox="0 0 980 360" className="h-auto w-full min-w-[720px]" role="img" aria-label={t('Data flow: phones to load balancer, two API servers coordinated by etcd, PostgreSQL primary and replica, outbox to Kafka, Spark streaming and batch, analytics dashboard.')}>
-      <defs>
-        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-          <path d="M0 0 L10 5 L0 10z" fill="#0d7a68" />
-        </marker>
-      </defs>
-      {node(10, 150, 140, 'Phones', 'IndexedDB + outbox', '#f2a93b')}
-      {node(200, 150, 130, 'nginx', 'load balancer', '#dce3ea')}
-      {node(380, 90, 140, 'API 1', 'Node.js', '#0d7a68')}
-      {node(380, 210, 140, 'API 2', 'Node.js', '#0d7a68')}
-      {node(380, 10, 140, 'etcd ×3', 'Raft leader', '#2f6fb0')}
-      {node(580, 90, 170, 'PostgreSQL', 'primary, by ward', '#12203a')}
-      {node(580, 210, 170, 'PostgreSQL', 'replica (WAL)', '#5a6b80')}
-      {node(580, 300, 170, 'MinIO', 'files, backups', '#dce3ea')}
-      {node(800, 10, 170, 'Kafka', '4 topics, key = ward', '#d23a5f')}
-      {node(800, 120, 170, 'Spark', 'stream + nightly batch', '#f2a93b')}
-      {node(800, 230, 170, 'Analytics', 'dashboard tables', '#0d7a68')}
-      {flow('M150 179 L196 179')}
-      {flow('M330 170 C355 165 355 125 376 120')}
-      {flow('M330 188 C355 195 355 235 376 240')}
-      {flow('M450 86 L450 72', '#2f6fb0')}
-      {flow('M520 119 L576 119')}
-      {flow('M520 239 C548 239 548 130 576 128')}
-      {flow('M665 148 L665 206', '#5a6b80')}
-      {flow('M520 252 C545 270 555 320 576 325', '#5a6b80')}
-      {flow('M750 100 C780 90 780 45 796 40', '#d23a5f')}
-      {flow('M885 68 L885 116', '#d23a5f')}
-      {flow('M885 178 L885 226')}
-      {flow('M750 245 C775 245 775 200 796 160', '#5a6b80')}
-    </svg>
   );
 }
 
@@ -226,271 +100,200 @@ const PROBLEMS = [
 
 const STEPS = [
   { icon: Smartphone, title: 'Record offline', text: 'Register a patient or an antenatal visit anywhere. The app never waits for the network.' },
-  { icon: HardDrive, title: 'Saved on the phone', text: 'Each change is written to the phone’s database together with an entry in a change queue, in one step.' },
-  { icon: RefreshCw, title: 'Syncs by itself', text: 'When a signal appears, small compressed batches are sent. Retries are safe: the server ignores duplicates.' },
-  { icon: GitMerge, title: 'Merged without loss', text: 'Version vectors detect overlapping edits. Clinical readings that disagree are kept side by side for a doctor.' },
+  { icon: HardDrive, title: 'Saved on the phone', text: 'Every change is kept safely on the phone, even if the phone is switched off or the battery runs out.' },
+  { icon: RefreshCw, title: 'Syncs by itself', text: 'When a signal appears, saved changes are sent by themselves. Nothing is lost and nothing is saved twice.' },
+  { icon: GitMerge, title: 'Merged without loss', text: 'If two workers record different readings for the same person, both are kept side by side for a doctor to decide.' },
 ];
 
 const ROLES = [
-  { icon: Footprints, title: 'Health volunteer', color: 'bg-pine-wash text-pine', points: ['Register households and mothers', 'Record ANC visits with vitals', 'Works with no internet for days'] },
-  { icon: Stethoscope, title: 'Doctor', color: 'bg-sky-wash text-sky', points: ['See high-risk pregnancies first', 'Resolve conflicting readings', 'Analytics across villages'] },
-  { icon: HeartPulse, title: 'Patient', color: 'bg-lali-wash text-lali', points: ['Pregnancy week and due date', 'Next check-up and readings', 'Danger signs to watch for'] },
-  { icon: ShieldCheck, title: 'Administrator', color: 'bg-marigold-wash text-marigold-deep', points: ['Users, roles and wards', 'Database failover and backups', 'Live health of every service'] },
-];
-
-const CHAPTERS = [
-  ['3', 'Data models', 'JSON documents + relational tables'],
-  ['4', 'Storage', 'Append-only event log, outbox'],
-  ['5', 'Encoding', 'Versioned events, old apps still sync'],
-  ['6', 'Replication', 'Every phone a leader; WAL replica'],
-  ['7', 'Sharding', 'Partitioned by ward'],
-  ['8', 'Transactions', 'Atomic write + outbox'],
-  ['9', 'Faults', 'Retries, hybrid logical clocks'],
-  ['10', 'Consensus', 'etcd Raft leader election'],
-  ['11', 'Batch & streams', 'Kafka + Spark'],
-];
-
-const STACK = [
-  { icon: Smartphone, label: 'React PWA' }, { icon: Server, label: 'Node.js' }, { icon: Database, label: 'PostgreSQL' },
-  { icon: Radio, label: 'Kafka' }, { icon: Zap, label: 'Spark' }, { icon: Crown, label: 'etcd' },
-  { icon: Boxes, label: 'MinIO' }, { icon: Activity, label: 'Prometheus + Grafana' },
+  { icon: Footprints, title: 'Health volunteer', bar: 'border-pine', ic: 'text-pine', points: ['Register households and mothers', 'Record ANC visits with vitals', 'Works with no internet for days'] },
+  { icon: Stethoscope, title: 'Doctor', bar: 'border-sky', ic: 'text-sky', points: ['See high-risk pregnancies first', 'Resolve conflicting readings', 'Analytics across villages'] },
+  { icon: HeartPulse, title: 'Patient', bar: 'border-lali', ic: 'text-lali', points: ['Pregnancy week and due date', 'Next check-up and readings', 'Danger signs to watch for'] },
+  { icon: ShieldCheck, title: 'Administrator', bar: 'border-marigold', ic: 'text-marigold-deep', points: ['Users, roles and wards', 'Approve new accounts', 'Backups of all records'] },
 ];
 
 export function Home() {
   const { session } = useAuth();
-  const [scrolled, setScrolled] = useState(false);
-  const [heroImage, setHeroImage] = useState(true);
-  const [stepsRef, stepsSeen] = useInView({ threshold: 0.3 });
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
   const cta = session ? { to: '/', label: t('Open the app') } : { to: '/login', label: t('Try the live demo') };
 
   return (
-    <div className="min-h-full scroll-smooth bg-white">
+    <div className="min-h-full scroll-smooth bg-paper">
       {/* ---------- top bar ---------- */}
-      <header className={cx('fixed inset-x-0 top-0 z-40 transition-all duration-300',
-        scrolled ? 'bg-ink/90 shadow-lg backdrop-blur-md' : 'bg-transparent')}>
-        <div className="mx-auto flex h-16 max-w-[1200px] items-center gap-6 px-5 text-white md:px-8">
-          <Link to="/home" className="flex items-center gap-2.5 text-white no-underline">
-            <img src="/favicon.svg" alt="" className="size-9 rounded-xl ring-1 ring-white/20" />
-            <strong className="font-condensed text-lg font-semibold">RuralHealth Sync</strong>
+      <header className="sticky top-0 z-40 border-b border-line bg-paper/95 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-[1180px] items-center gap-3 px-4 sm:gap-6 md:px-8">
+          <Link to="/home" className="flex items-center gap-2.5 text-ink no-underline">
+            <img src="/favicon.svg" alt="" className="size-9 rounded-[10px]" />
+            <span className="leading-none">
+              <strong className="block font-serif text-[19px] font-semibold">Sewika</strong>
+              <span className="hidden text-[12px] text-pine sm:block">सेविका</span>
+            </span>
           </Link>
-          <nav className="hidden items-center gap-1 text-sm font-semibold md:flex" aria-label={t('Sections')}>
-            {[['#problem', 'The problem'], ['#how', 'How it works'], ['#roles', 'Who uses it'], ['#tech', 'Technology']].map(([href, l]) => (
-              <a key={href} href={href} className="rounded-full px-3.5 py-2 text-white/75 no-underline transition-colors hover:bg-white/10 hover:text-white">{t(l)}</a>
+          <nav className="hidden items-center gap-5 text-[15px] md:flex" aria-label={t('Sections')}>
+            {[['#problem', 'The problem'], ['#how', 'How it works'], ['#roles', 'Who uses it']].map(([href, l]) => (
+              <a key={href} href={href} className="text-ink-soft no-underline hover:text-ink hover:underline hover:underline-offset-4">{t(l)}</a>
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            <LanguageSwitcher tone="dark" />
-            {!session && <Button as={Link} to="/login?mode=signup" variant="glass" size="sm" className="hidden h-9 px-4 sm:inline-flex">{t('Create account')}</Button>}
-            <Button as={Link} to={cta.to} variant="accent" size="sm" className="h-9 px-4">{session ? t('Open the app') : t('Sign in')}</Button>
+            <LanguageSwitcher />
+            {!session && <span className="hidden sm:inline-flex"><Button as={Link} to="/login?mode=signup" variant="ghost" size="sm" className="h-9 px-4">{t('Create account')}</Button></span>}
+            <Button as={Link} to={cta.to} size="sm" className="h-9 px-4">{session ? t('Open the app') : t('Sign in')}</Button>
           </div>
         </div>
       </header>
 
       {/* ---------- hero ---------- */}
-      <section className="relative overflow-hidden bg-brand pt-28 pb-24 text-white md:pt-36 md:pb-32">
-        {heroImage && (
-          <img src="/images/hero.jpg" alt="" onError={() => setHeroImage(false)}
-            className="absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-luminosity" />
-        )}
-        <span aria-hidden className="absolute -top-32 -left-24 size-[420px] animate-aurora rounded-full bg-mint/20 blur-3xl" />
-        <span aria-hidden className="absolute top-40 -right-32 size-[460px] animate-aurora rounded-full bg-marigold/15 blur-3xl [animation-delay:-8s]" />
-        {STARS.map((s, i) => (
-          <span key={i} aria-hidden className="absolute animate-twinkle rounded-full bg-white" style={{ left: s.left, top: s.top, width: s.s, height: s.s, animationDelay: s.d }} />
-        ))}
-        <svg aria-hidden className="absolute inset-x-0 bottom-0 h-40 w-full md:h-56" viewBox="0 0 1200 220" preserveAspectRatio="none">
-          <path d="M0 150 L120 90 L220 130 L360 40 L470 120 L560 80 L700 140 L820 50 L930 110 L1040 70 L1200 120 L1200 220 L0 220Z" fill="#26426a" />
-          <path d="M0 180 L160 140 L300 170 L460 120 L620 175 L780 140 L950 175 L1200 145 L1200 220 L0 220Z" fill="#0b5a4e" />
-          <path d="M0 205 C200 185 420 200 620 192 S1000 185 1200 198 L1200 220 L0 220Z" fill="#ffffff" />
-        </svg>
-
-        <div className="relative mx-auto grid max-w-[1200px] items-center gap-14 px-5 md:px-8 lg:grid-cols-[1.1fr_1fr]">
-          <div>
-            <Reveal>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] text-white/85 backdrop-blur">
-                <Signal size={14} className="text-mint" /> {t('Local-first health records for rural South Asia')}
-              </span>
-            </Reveal>
-            <Reveal delay={100}>
-              <h1 className="mt-5 max-w-[16ch] font-condensed text-[42px] leading-[1.02] font-semibold tracking-tight md:text-[64px]">
-                {t('Every reading saved, even where the signal never reaches.')}
-              </h1>
-            </Reveal>
-            <Reveal delay={200}>
-              <p className="mt-5 max-w-[52ch] text-lg text-white/80">
-                {t('RuralHealth Sync lets community health volunteers record mothers, pregnancies and visits with no internet, then synchronizes safely when a connection appears. When two workers disagree, both readings are kept for a doctor. Nothing is silently overwritten.')}
-              </p>
-            </Reveal>
-            <Reveal delay={300} className="mt-8 flex flex-wrap gap-3">
-              <Button as={Link} to={cta.to} variant="accent" className="h-12 px-6 text-base">{cta.label}</Button>
-              <Button as="a" href="#how" variant="glass" className="h-12 px-6 text-base"><ArrowDown size={18} /> {t('How it works')}</Button>
-            </Reveal>
-            <Reveal delay={400} className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/75">
-              {['Works fully offline', 'Syncs on weak 2G', 'Installs like an app'].map((txt) => (
-                <span key={txt} className="flex items-center gap-2"><CheckCircle2 size={17} className="text-mint" /> {t(txt)}</span>
-              ))}
-            </Reveal>
+      <section className="mx-auto grid max-w-[1180px] items-center gap-10 px-4 pt-10 pb-16 md:px-8 md:pt-16 md:pb-24 lg:grid-cols-[1fr_1.05fr] lg:gap-14">
+        <div>
+          <p className="text-[15px] font-semibold text-pine">{t("For Nepal's female community health volunteers")}</p>
+          <h1 className="mt-3 max-w-[18ch] font-serif text-[36px] leading-[1.1] font-semibold text-ink md:text-[52px]">
+            {t('Every reading saved, even where the signal never reaches.')}
+          </h1>
+          <p className="mt-5 max-w-[54ch] text-[17px] leading-relaxed text-ink-2">
+            {t('Sewika lets community health volunteers record mothers, pregnancies and visits with no internet, then synchronizes safely when a connection appears. When two workers disagree, both readings are kept for a doctor. Nothing is silently overwritten.')}
+          </p>
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Button as={Link} to={cta.to} className="h-12 px-6 text-base">{cta.label} <ArrowRight size={18} /></Button>
+            <Button as="a" href="#how" variant="ghost" className="h-12 px-6 text-base">{t('How it works')}</Button>
           </div>
-          <Reveal delay={250}><PhoneMockup /></Reveal>
+          <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-ink-2">
+            {['Works fully offline', 'Syncs on weak 2G', 'Installs like an app'].map((txt) => (
+              <li key={txt} className="flex items-center gap-2"><CheckCircle2 size={17} className="text-pine" /> {t(txt)}</li>
+            ))}
+          </ul>
         </div>
+        <Photo photo={PHOTOS.fchv} eager imgClassName="aspect-[3/2] rounded-lg shadow-[0_18px_40px_-22px_rgba(28,38,56,.6)]" />
       </section>
 
       {/* ---------- problem ---------- */}
-      <section id="problem" className="scroll-mt-20 bg-white py-20 md:py-28">
-        <div className="mx-auto max-w-[1200px] px-5 md:px-8">
-          <Reveal className="max-w-[720px]">
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('Built for places the network forgets')}</h2>
-            <p className="mt-4 text-lg text-ink-soft">
+      <section id="problem" className="scroll-mt-16 border-y border-line bg-white py-16 md:py-24">
+        <div className="mx-auto grid max-w-[1180px] gap-12 px-4 md:px-8 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+          <div>
+            <h2 className={H2}>{t('Built for places the network forgets')}</h2>
+            <p className="mt-4 text-[17px] leading-relaxed text-ink-2">
               {t('Female Community Health Volunteers in rural Nepal, Lady Health Workers in Pakistan and rural clinic staff in Bangladesh and Sri Lanka keep maternal and community health running in hill villages, often with no reliable connection.')}
             </p>
-          </Reveal>
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
+            <Photo photo={PHOTOS.village} className="mt-8" imgClassName="aspect-[4/3] rounded-lg" />
+          </div>
+          <ol className="m-0 list-none self-center p-0">
             {PROBLEMS.map((p, i) => (
-              <Reveal key={p.title} delay={i * 120}>
+              <li key={p.slug} className="border-t border-line first:border-t-0">
                 <Link to={`/problems/${p.slug}`} aria-label={`${t(p.title)}: ${t('read the full explanation')}`}
-                  className="group flex h-full flex-col rounded-3xl border border-line bg-paper p-7 text-ink no-underline transition-all duration-300 hover:-translate-y-1 hover:border-pine/30 hover:bg-white hover:shadow-xl focus-visible:-translate-y-1">
-                  <span className="grid size-12 place-items-center rounded-2xl bg-white text-lali shadow-sm transition-transform duration-300 group-hover:scale-110"><p.icon size={22} /></span>
-                  <h3 className="mt-5 text-xl font-semibold">{t(p.title)}</h3>
-                  <p className="mt-2 flex-1 text-ink-soft">{t(p.text)}</p>
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-pine">
-                    {t('Read the full explanation')} <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                  className="group flex gap-5 py-7 text-ink no-underline">
+                  <span className="font-serif text-[34px] leading-none text-lali">{num(String(i + 1))}</span>
+                  <span className="flex-1">
+                    <span className="flex items-center gap-2 text-xl font-semibold"><p.icon size={19} className="text-ink-soft" /> {t(p.title)}</span>
+                    <span className="mt-2 block text-ink-soft">{t(p.text)}</span>
+                    <span className="mt-3 inline-flex items-center gap-1.5 text-[15px] font-semibold text-pine group-hover:underline group-hover:underline-offset-4">
+                      {t('Read the full explanation')} <ArrowRight size={16} />
+                    </span>
                   </span>
                 </Link>
-              </Reveal>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
       {/* ---------- how it works ---------- */}
-      <section id="how" className="relative scroll-mt-20 overflow-hidden bg-paper py-20 md:py-28">
-        <div className="mx-auto max-w-[1200px] px-5 md:px-8">
-          <Reveal className="mx-auto max-w-[720px] text-center">
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('How a visit travels from the village to the clinic')}</h2>
-            <p className="mt-4 text-lg text-ink-soft">{t('Local first: the phone is the source of truth while offline, and the server merges everyone’s work when they reconnect.')}</p>
-          </Reveal>
-          <div ref={stepsRef} className="relative mt-16 grid gap-10 md:grid-cols-4 md:gap-6">
-            <div aria-hidden className="absolute top-8 right-[12%] left-[12%] hidden h-1 overflow-hidden rounded-full bg-line md:block">
-              <div className={cx('h-full origin-left rounded-full bg-gradient-to-r from-marigold via-pine to-mint transition-transform duration-[1800ms] ease-out', stepsSeen ? 'scale-x-100' : 'scale-x-0')} />
-            </div>
-            {STEPS.map((s, i) => (
-              <div key={s.title} className={cx('relative text-center transition-all duration-700 ease-out', stepsSeen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0')}
-                style={{ transitionDelay: `${300 + i * 350}ms` }}>
-                <div className="relative mx-auto grid size-16 place-items-center rounded-2xl bg-white text-pine shadow-lg ring-4 ring-paper">
-                  <s.icon size={26} />
-                  <span className="absolute -top-2 -right-2 grid size-7 place-items-center rounded-full bg-ink text-xs font-bold text-white">{i + 1}</span>
+      <section id="how" className="scroll-mt-16 py-16 md:py-24">
+        <div className="mx-auto grid max-w-[1180px] items-center gap-12 px-4 md:px-8 lg:grid-cols-[1.2fr_1fr]">
+          <div>
+            <h2 className={H2}>{t('How a visit travels from the village to the clinic')}</h2>
+            <p className="mt-4 max-w-[60ch] text-[17px] leading-relaxed text-ink-2">{t('Local first: the phone is the source of truth while offline, and the server merges everyone’s work when they reconnect.')}</p>
+            <ol className="relative mt-10 list-none space-y-8 p-0">
+              <span aria-hidden className="absolute top-2 bottom-2 left-[19px] w-px bg-line" />
+              {STEPS.map((s, i) => (
+                <li key={s.title} className="relative flex gap-5">
+                  <span className="relative grid size-10 flex-none place-items-center rounded-full border-2 border-pine bg-paper font-semibold text-pine">{num(String(i + 1))}</span>
+                  <div>
+                    <h3 className="flex items-center gap-2 text-lg font-semibold"><s.icon size={18} className="text-ink-soft" /> {t(s.title)}</h3>
+                    <p className="mt-1 max-w-[52ch] text-ink-soft">{t(s.text)}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <PhoneMockup />
+        </div>
+      </section>
+
+      {/* ---------- conflict showcase ---------- */}
+      <section className="bg-brand py-16 text-white md:py-24">
+        <div className="mx-auto grid max-w-[1180px] items-center gap-12 px-4 md:px-8 lg:grid-cols-2 lg:gap-16">
+          <Photo photo={PHOTOS.checkup} tone="dark" imgClassName="aspect-[3/2] rounded-lg" />
+          <div>
+            <h2 className="font-serif text-[30px] leading-[1.15] font-semibold md:text-[40px]">{t('Two readings. Nothing lost.')}</h2>
+            <p className="mt-4 text-[17px] leading-relaxed text-white/80">
+              {t('Sita and Gita both visit the same mother while offline and record different blood pressures. A naive app keeps whichever phone syncs last. Sewika notices that neither worker saw the other’s reading and keeps both.')}
+            </p>
+            <div className="mt-7 grid grid-cols-2 gap-3 text-ink">
+              {[["Sita's phone, offline", '120/80', 'Blood pressure, 10:12'], ["Gita's phone, offline", '140/90', 'Blood pressure, 10:40']].map(([who, bp, when]) => (
+                <div key={who} className="rounded-lg bg-white p-4">
+                  <div className="flex items-center gap-1.5 text-xs text-ink-soft"><Smartphone size={13} /> {t(who)}</div>
+                  <div className="mt-1 font-condensed text-[28px] font-semibold">{bp}</div>
+                  <div className="text-xs text-ink-soft">{t(when)}</div>
                 </div>
-                <h3 className="mt-5 text-lg font-semibold">{t(s.title)}</h3>
-                <p className="mx-auto mt-2 max-w-[30ch] text-[15px] text-ink-soft">{t(s.text)}</p>
+              ))}
+            </div>
+            <div className="mt-3 rounded-lg border-l-4 border-marigold bg-white/10 p-4">
+              <div className="flex items-center gap-2 font-semibold"><GitMerge size={16} className="text-marigold" /> {t('Conflicting readings, both kept')}</div>
+              <p className="mt-1 text-[15px] text-white/80">{t('A blood pressure value is clinical, so the server never picks one silently. It waits for a doctor.')}</p>
+            </div>
+            <ul className="mt-6 space-y-2 text-white/85">
+              {['Clinical fields are never chosen automatically', 'Every decision is recorded in an audit log'].map((txt) => (
+                <li key={txt} className="flex gap-3"><CheckCircle2 size={19} className="mt-0.5 flex-none text-mint" /> {t(txt)}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------- roles ---------- */}
+      <section id="roles" className="scroll-mt-16 bg-white py-16 md:py-24">
+        <div className="mx-auto max-w-[1180px] px-4 md:px-8">
+          <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr] lg:items-end">
+            <div>
+              <h2 className={H2}>{t('One record, four kinds of users')}</h2>
+              <p className="mt-4 max-w-[60ch] text-[17px] leading-relaxed text-ink-2">{t('Each person sees what they need. Volunteers only see their own ward, and patients only their own record.')}</p>
+            </div>
+          </div>
+          <div className="mt-10 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+            {ROLES.map((r) => (
+              <div key={r.title} className={cx('border-t-[3px] pt-5', r.bar)}>
+                <h3 className="flex items-center gap-2 text-lg font-semibold"><r.icon size={19} className={r.ic} /> {t(r.title)}</h3>
+                <ul className="mt-3 space-y-1.5 text-ink-soft">
+                  {r.points.map((p) => <li key={p}>{t(p)}</li>)}
+                </ul>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ---------- conflict showcase ---------- */}
-      <section className="relative overflow-hidden bg-brand py-20 text-white md:py-28">
-        <span aria-hidden className="absolute -bottom-40 -left-20 size-[420px] animate-aurora rounded-full bg-mint/15 blur-3xl" />
-        <div className="relative mx-auto grid max-w-[1200px] items-center gap-14 px-5 md:px-8 lg:grid-cols-2">
-          <Reveal>
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('Two readings. Nothing lost.')}</h2>
-            <p className="mt-4 text-lg text-white/80">
-              {t('Sita and Gita both visit the same mother while offline and record different blood pressures. A naive app keeps whichever phone syncs last. RuralHealth Sync notices that neither worker saw the other’s reading and keeps both.')}
-            </p>
-            <ul className="mt-6 space-y-3 text-white/85">
-              {['Version vectors tell concurrent edits apart from corrections', 'Clinical fields are never chosen automatically', 'Phone numbers and notes settle by hybrid logical clock, the same on every device', 'Every decision is recorded in an audit log'].map((txt) => (
-                <li key={txt} className="flex gap-3"><CheckCircle2 size={20} className="mt-0.5 flex-none text-mint" /> {t(txt)}</li>
-              ))}
-            </ul>
-          </Reveal>
-          <Reveal delay={150}><ConflictDemo /></Reveal>
-        </div>
-      </section>
-
-      {/* ---------- roles ---------- */}
-      <section id="roles" className="scroll-mt-20 bg-white py-20 md:py-28">
-        <div className="mx-auto max-w-[1200px] px-5 md:px-8">
-          <Reveal className="max-w-[720px]">
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('One record, four kinds of users')}</h2>
-            <p className="mt-4 text-lg text-ink-soft">{t('Each person sees what they need. Volunteers only see their own ward, and patients only their own record.')}</p>
-          </Reveal>
-          <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {ROLES.map((r, i) => (
-              <Reveal key={r.title} delay={i * 100}>
-                <div className="group h-full rounded-3xl border border-line p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
-                  <span className={cx('grid size-12 place-items-center rounded-2xl transition-transform duration-300 group-hover:rotate-[-6deg] group-hover:scale-110', r.color)}><r.icon size={22} /></span>
-                  <h3 className="mt-5 text-lg font-semibold">{t(r.title)}</h3>
-                  <ul className="mt-3 space-y-2 text-[15px] text-ink-soft">
-                    {r.points.map((p) => <li key={p} className="flex gap-2"><span className="mt-2 size-1.5 flex-none rounded-full bg-pine" />{t(p)}</li>)}
-                  </ul>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ---------- technology ---------- */}
-      <section id="tech" className="scroll-mt-20 bg-paper py-20 md:py-28">
-        <div className="mx-auto max-w-[1200px] px-5 md:px-8">
-          <Reveal className="max-w-[760px]">
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('A small distributed big data system')}</h2>
-            <p className="mt-4 text-lg text-ink-soft">
-              {t('Built on the ideas of Designing Data-Intensive Applications: replication, partitioning, transactions, consensus, and batch and stream processing, each with a concrete job in the system.')}
-            </p>
-          </Reveal>
-          <Reveal delay={100} className="mt-10 overflow-x-auto rounded-3xl border border-line bg-white p-5 shadow-sm md:p-8">
-            <Pipeline />
-          </Reveal>
-          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {CHAPTERS.map(([n, title, d], i) => (
-              <Reveal key={n} delay={i * 60}>
-                <div className="flex h-full items-center gap-4 rounded-2xl border border-line bg-white px-4 py-3.5 transition-colors hover:border-pine/40">
-                  <span className="grid size-11 flex-none place-items-center rounded-xl bg-ink font-condensed text-lg font-semibold text-white">{num(n)}</span>
-                  <div><div className="font-semibold">{t(title)}</div><div className="text-sm text-ink-soft">{t(d)}</div></div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-          <Reveal delay={150} className="mt-10 flex flex-wrap justify-center gap-2.5">
-            {STACK.map((s) => (
-              <span key={s.label} className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-semibold text-ink-2">
-                <s.icon size={16} className="text-pine" /> {s.label}
-              </span>
-            ))}
-          </Reveal>
-        </div>
-      </section>
-
       {/* ---------- call to action ---------- */}
-      <section className="bg-white py-20 md:py-24">
-        <Reveal className="relative mx-5 overflow-hidden rounded-[2rem] bg-brand px-6 py-14 text-center text-white md:mx-auto md:max-w-[1100px] md:px-16">
-          <span aria-hidden className="absolute -top-20 left-1/3 size-80 animate-aurora rounded-full bg-marigold/20 blur-3xl" />
-          <div className="relative">
-            <h2 className="font-condensed text-[32px] leading-tight font-semibold md:text-[44px]">{t('See it working')}</h2>
-            <p className="mx-auto mt-3 max-w-[56ch] text-lg text-white/80">
-              {t('Sign in as a health volunteer, a doctor or a patient with the demo accounts. Turn the network off from the Sync screen and keep working.')}
-            </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button as={Link} to={cta.to} variant="accent" className="h-12 px-7 text-base">{cta.label}</Button>
-              {!session && <Button as={Link} to="/login?mode=signup" variant="glass" className="h-12 px-7 text-base">{t('Create an account')}</Button>}
-            </div>
+      <section className="relative overflow-hidden bg-ink text-white">
+        <img src={PHOTOS.terraces.src} alt={t(PHOTOS.terraces.alt)} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-ink/90 via-ink/70 to-ink/20" />
+        <div className="relative mx-auto max-w-[1180px] px-4 py-20 md:px-8 md:py-28">
+          <h2 className="max-w-[18ch] font-serif text-[32px] leading-[1.15] font-semibold md:text-[44px]">{t('See it working')}</h2>
+          <p className="mt-4 max-w-[52ch] text-[17px] leading-relaxed text-white/85">
+            {t('Sign in as a health volunteer, a doctor or a patient with the demo accounts. Turn the network off from the Sync screen and keep working.')}
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button as={Link} to={cta.to} variant="accent" className="h-12 px-7 text-base">{cta.label}</Button>
+            {!session && <Button as={Link} to="/login?mode=signup" variant="light" className="h-12 px-7 text-base">{t('Create an account')}</Button>}
           </div>
-        </Reveal>
+          <p className="mt-12 text-[13px] text-white/60">{t(PHOTOS.terraces.caption)} <Credit photo={PHOTOS.terraces} className="text-white/45" /></p>
+        </div>
       </section>
 
-      <footer className="border-t border-line bg-white">
-        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-4 px-5 py-8 text-sm text-ink-soft md:px-8">
-          <img src="/favicon.svg" alt="" className="size-7" />
-          <span><b className="text-ink">RuralHealth Sync</b>. {t('Final-semester Big Data project.')}</span>
-          <span className="md:ml-auto">{t('Demo data is synthetic. Not for clinical use.')}</span>
+      <footer className="bg-paper">
+        <div className="mx-auto grid max-w-[1180px] gap-3 px-4 py-8 text-sm text-ink-soft md:grid-cols-[1fr_auto] md:px-8">
+          <span className="flex items-center gap-3">
+            <img src="/favicon.svg" alt="" className="size-7 rounded-md" />
+            <span><b className="font-serif text-ink">Sewika</b>. {t('Final-semester Big Data project.')} {t('Demo data is synthetic. Not for clinical use.')}</span>
+          </span>
+          <span className="md:text-right">{t('Photos from Wikimedia Commons, credited under each photo. The people shown are not users of this app.')}</span>
         </div>
       </footer>
     </div>

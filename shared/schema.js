@@ -1,4 +1,4 @@
-// Shared data model for RuralHealth Sync.
+// Shared data model for Sewika.
 // Used by BOTH the React app and the Node backend so the two sides always agree
 // on what a record looks like (DDIA Ch.3 — data models; Ch.5 — encoding & evolution).
 //

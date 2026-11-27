@@ -1,4 +1,4 @@
-# RuralHealth Sync
+# Sewika (सेविका)
 
 **Design and Implementation of a Local-First Distributed Big Data Platform for Rural Community Health Records under Intermittent Connectivity**
 
@@ -8,7 +8,7 @@ and goes, or with no power for days. Cloud-only health record systems stop worki
 the connection drops, and naive offline caching loses updates when two workers edit the
 same household or pregnancy record.
 
-RuralHealth Sync is an installable web app (PWA) that keeps working with no internet,
+Sewika is an installable web app (PWA) that keeps working with no internet,
 saves every change on the phone first, and synchronizes safely later. When two workers
 record different clinical values for the same patient while offline, **both values are
 kept** and a doctor reviews them. Nothing is silently overwritten.
@@ -89,7 +89,7 @@ The first start takes a few minutes (images download, demo data is created).
 | Spark master UI | http://localhost:8080 | – |
 | MinIO console | http://localhost:9001 | minioadmin / minioadmin |
 | Prometheus | http://localhost:9090 | – |
-| Grafana | http://localhost:3000 | admin / admin (dashboard "RuralHealth Sync — system") |
+| Grafana | http://localhost:3000 | admin / admin (dashboard "Sewika — system") |
 
 Stop everything: `docker compose --profile bigdata --profile monitoring down`.
 Delete all data and start fresh: add `-v` to that command.

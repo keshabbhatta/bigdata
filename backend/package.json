@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "RuralHealth Sync API: authentication, synchronization engine, conflict resolution, outbox to Kafka",
+  "description": "Sewika API: authentication, synchronization engine, conflict resolution, outbox to Kafka",
   "main": "src/server.js",
   "engines": { "node": ">=20" },
   "scripts": {

@@ -46,7 +46,7 @@ const children = apps.map(({ name, dir, color }) => {
   return child;
 });
 
-console.log('\nStarting RuralHealth Sync in development mode:');
+console.log('\nStarting Sewika in development mode:');
 console.log('  App  http://localhost:5173   (on a phone on the same Wi-Fi: http://<this PC IP>:5173)');
 console.log('  API  http://localhost:4000\n  Ctrl+C stops both.\n');
 

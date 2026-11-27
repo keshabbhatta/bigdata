@@ -5,6 +5,7 @@ import { db, getMeta } from '../offline/indexedDB.js';
 import { deviceId, clock } from '../offline/device.js';
 import { PROFILES, setProfile } from '../offline/networkSim.js';
 import { useSync } from '../context/SyncContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import { useOutbox, useSyncLog } from '../hooks/useRecords.js';
 import { Badge, Button, Empty, PageHead, Panel, PanelHead, Segmented, Table, cx } from '../components/ui.jsx';
 import { bytes, formatDateTime, relativeTime } from '../utils/format.js';
@@ -16,6 +17,8 @@ const ENTITY_LABEL = { patient: 'patient', pregnancy: 'pregnancy', visit: 'visit
 
 export function SyncStatus() {
   const s = useSync();
+  // Device ID, logical clock and byte counts are developer details: administrators only.
+  const isAdmin = useAuth().user?.role === 'admin';
   const outbox = useOutbox();
   const log = useSyncLog();
   const names = useLiveQuery(async () => {
@@ -58,7 +61,7 @@ export function SyncStatus() {
         </Button>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+      <div className={cx('grid gap-5', isAdmin && 'lg:grid-cols-[1.3fr_1fr]')}>
         <Panel>
           <PanelHead title={t('Network simulator')} hint={t('For demonstrations and experiments')} />
           <div className="px-5 py-4.5">
@@ -74,6 +77,7 @@ export function SyncStatus() {
           </div>
         </Panel>
 
+        {isAdmin && (
         <Panel>
           <PanelHead title={t('This device')} />
           <dl className="grid grid-cols-[130px_1fr] gap-x-4 gap-y-2 px-5 py-4.5 text-sm">
@@ -83,6 +87,7 @@ export function SyncStatus() {
             <dt className="text-ink-soft">{t('Logical clock')}</dt><dd className="font-medium break-all">{clock.current().split(':').slice(0, 2).join(':')}</dd>
           </dl>
         </Panel>
+        )}
       </div>
 
       <Panel className="mt-5">
@@ -120,9 +125,9 @@ export function SyncStatus() {
       )}
 
       <Panel className="mt-5">
-        <PanelHead title={t('Sync history')} hint={t('Bytes sent are after gzip compression')} />
+        <PanelHead title={t('Sync history')} hint={isAdmin ? t('Bytes sent are after gzip compression') : undefined} />
         {log.length === 0 ? <Empty title={t('No sync attempts yet')} /> : (
-          <Table head={[t('Time'), t('Result'), t('Sent'), t('Received'), { label: t('Data sent'), hideSm: true }, { label: t('Duration'), hideSm: true }]}>
+          <Table head={[t('Time'), t('Result'), t('Sent'), t('Received'), ...(isAdmin ? [{ label: t('Data sent'), hideSm: true }] : []), { label: t('Duration'), hideSm: true }]}>
             {log.map((l) => {
               const saving = l.rawBytes ? Math.round((1 - l.sentBytes / l.rawBytes) * 100) : 0;
               return (
@@ -135,9 +140,9 @@ export function SyncStatus() {
                   </td>
                   <td>{num(l.pushed)}</td>
                   <td>{num(l.pulled)}</td>
-                  <td className="hidden whitespace-nowrap md:table-cell">
+                  {isAdmin && <td className="hidden whitespace-nowrap md:table-cell">
                     {l.rawBytes ? <>{bytes(l.sentBytes)} <span className="text-ink-soft">{t('of {size}', { size: bytes(l.rawBytes) })}{saving > 0 ? `, ${t('{n}% smaller', { n: saving })}` : ''}</span></> : '–'}
-                  </td>
+                  </td>}
                   <td className="hidden md:table-cell">{l.durationMs != null ? t('{n} s', { n: (l.durationMs / 1000).toFixed(2) }) : '–'}</td>
                 </tr>
               );

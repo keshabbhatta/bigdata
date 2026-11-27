@@ -1,9 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#16243A"/>
-  <path d="M8 46 L22 28 L30 37 L40 22 L56 46 Z" fill="#0E6B5C"/>
-  <path d="M36 28 L40 22 L44 28 Z" fill="#EEF2F5"/>
-  <rect x="14" y="50" width="6" height="6" rx="1.5" fill="#E9A23B"/>
-  <rect x="24" y="46" width="6" height="10" rx="1.5" fill="#E9A23B"/>
-  <rect x="34" y="42" width="6" height="14" rx="1.5" fill="#E9A23B"/>
-  <rect x="44" y="38" width="6" height="18" rx="1.5" fill="#EEF2F5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Sewika logo: a heart with a heartbeat, a signal, and the hills of Nepal. -->
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#16243A"/>
+      <stop offset="1" stop-color="#173F45"/>
+    </linearGradient>
+    <linearGradient id="hill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#13906F"/>
+      <stop offset="1" stop-color="#0B5E4E"/>
+    </linearGradient>
+    <clipPath id="box"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <g clip-path="url(#box)">
+    <rect width="512" height="512" fill="url(#sky)"/>
+    <path d="M0 400 L95 348 L150 372 L250 300 L322 350 L372 318 L512 382 V512 H0 Z" fill="#2A4268"/>
+    <path d="M0 444 Q256 404 512 432 V512 H0 Z" fill="url(#hill)"/>
+  </g>
+  <path d="M240 304 C200 274 118 222 118 158 C118 113 153 83 191 83 C214 83 231 96 240 114 C249 96 266 83 289 83 C327 83 362 113 362 158 C362 222 280 274 240 304 Z" fill="#FFFFFF"/>
+  <path d="M146 176 H202 L216 150 L232 206 L248 132 L262 176 H334" fill="none" stroke="#0E7A62" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="372" cy="192" r="17" fill="#E9A23B"/>
+  <path d="M372 144 A48 48 0 0 1 420 192" fill="none" stroke="#E9A23B" stroke-width="19" stroke-linecap="round"/>
+  <path d="M372 106 A86 86 0 0 1 458 192" fill="none" stroke="#E9A23B" stroke-width="19" stroke-linecap="round"/>
 </svg>

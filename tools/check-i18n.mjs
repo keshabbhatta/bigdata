@@ -32,17 +32,16 @@ const LIST_STRINGS = /(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)")/g;
 const CONTENT = [
   // [file, start marker, end marker] - every quoted string between the markers is UI text
   ['pages/Home.jsx', 'const PHONE_STATES', 'function PhoneMockup'],
-  ['pages/Home.jsx', 'const PROBLEMS = [', 'const STACK = ['],
+  ['pages/Home.jsx', 'const PROBLEMS = [', 'export function Home'],
   ['pages/Home.jsx', "{[['#problem'", '.map(([href, l])'],
   ['pages/Home.jsx', "{['Works fully offline'", '.map((txt)'],
-  ['pages/Home.jsx', "{['Version vectors", '.map((txt)'],
+  ['pages/Home.jsx', "{['Clinical fields are never chosen", '.map((txt)'],
+  ['pages/Home.jsx', `{[["Sita's phone`, '.map(([who'],
   ['pages/Home.jsx', "{[['30', 'Patients']", '.map(([n, l])'],
   ['pages/ProblemDetail.jsx', 'const PROBLEMS = {', 'const ORDER ='],
   ['pages/ProblemDetail.jsx', 'function SignalProblemPicture', 'const PROBLEMS = {'],
-  ['pages/Home.jsx', '{node(10, 150', '{flow('],
   ['pages/ProblemDetail.jsx', "{[['what', 'In simple words']", '.map(([id, label])'],
   ['pages/ProblemDetail.jsx', "{[[prev, 'Previous problem'", '.map(([s, label, Icon])'],
-  ['components/VillageScene.jsx', 'const PHASES = [', '];'],
   ['pages/MyHealth.jsx', 'const DANGER_SIGNS = [', '];'],
   ['pages/Login.jsx', 'const TABS = [', 'function GoogleIcon'],
   ['components/RecordForm.jsx', 'const ENUM_LABELS = {', '};'],
@@ -74,6 +73,8 @@ for (const file of files(src)) {
     const s = m[1] !== undefined ? unescape(m[1], "'") : m[2] !== undefined ? unescape(m[2], '"') : unescape(m[3], '`');
     add(s, rel);
   }
+  // Photo descriptions and captions, shown with t(photo.alt) / t(photo.caption).
+  if (rel === 'content/photos.js') for (const m of text.matchAll(/(?:alt|caption): '((?:[^'\\]|\\.)*)'/g)) add(unescape(m[1], "'"), rel);
   // Text inside <T>...</T> in the drawings of ProblemDetail (translated by T itself).
   if (rel === 'pages/ProblemDetail.jsx') for (const m of text.matchAll(/<T\b[^>]*>([^<>{}]*[A-Za-z][^<>{}]*)<\/T>/g)) add(m[1].trim(), rel);
   for (const [f, start, end] of CONTENT) {
@@ -105,6 +106,7 @@ for (const def of Object.values(ENTITIES)) {
 }
 for (const f of riskFlags({ bpSystolic: 150, hemoglobin: 8, dangerSigns: 'x', riskLevel: 'high' })) add(f, 'shared/schema.js');
 for (const c of passwordChecks('')) add(c.label, 'shared/accounts.js');
+add('Public domain', 'components/Photo.jsx');
 for (const op of ['New', 'Edit', 'Delete']) for (const e of ['patient', 'pregnancy', 'visit']) add(`${op} ${e}`, 'pages/SyncStatus.jsx');
 
 const all = [...keys.keys()].sort();
