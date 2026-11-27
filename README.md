@@ -221,11 +221,18 @@ Username + password works everywhere, including offline. Google sign-in is optio
 2. *APIs & Services → OAuth consent screen* → External → fill app name and your email.
 3. *Credentials → Create credentials → OAuth client ID → Web application*.
    Authorized JavaScript origins: `http://localhost:8088`, `http://localhost:4000`, `http://localhost:5173` and your Render URL.
-4. Copy the **Client ID** and set `GOOGLE_CLIENT_ID` (in `backend/.env`, in a `.env` file next to `docker-compose.yml`, or in Render's environment settings). Restart the API.
-5. Link people to their Google email: *Admin → Add user → Google email*, or for a demo user:
-   ```bash
-   docker compose exec postgres-primary psql -U ruralhealth -c "UPDATE users SET email='you@gmail.com' WHERE username='supervisor'"
+4. Copy the **Client ID** and run (from the project folder):
+   ```powershell
+   npm run google -- 123456789012-abc123.apps.googleusercontent.com
    ```
+   This saves it in `infrastructure/.env` and `backend/.env` (both ignored by Git) and restarts the API.
+5. While the OAuth consent screen is in *Testing*, add the Google accounts that may sign in under
+   *Audience → Test users* (or press *Publish app*).
+6. New people can now press **Create an account → Continue with Google**. Existing users can be linked
+   to their Google email in *Admin → Users*.
+
+The `npm run share` phone link changes every time, so add each new `https://….trycloudflare.com`
+link to the authorized JavaScript origins if you want Google sign-in on phones too.
 
 The login page then shows Google's official button. Google only proves who the person
 is; an administrator still decides who has an account and which role it has.

@@ -9,7 +9,7 @@ import { Button, Field, Input, Segmented, Select, cx } from '../components/ui.js
 import { passwordChecks, passwordProblems, isEmailFormat } from '../../../shared/accounts.js';
 import { NATION, isValidWard } from '../../../shared/areas.js';
 import { AreaPicker } from '../components/AreaPicker.jsx';
-import { t, tMsg, LanguageSwitcher } from '../i18n/index.jsx';
+import { t, tMsg, getLang, LanguageSwitcher } from '../i18n/index.jsx';
 
 const TABS = [
   { id: 'worker', icon: Footprints, blurb: 'Register households and record visits in the field, even with no signal.' },
@@ -94,11 +94,11 @@ function GoogleSignIn({ tab, signupRef, onError, onBusy, onPending }) {
           } catch (e) { onError(tMsg(e.message)); } finally { onBusy(false); }
         },
       });
-      window.google.accounts.id.renderButton(holder.current, { theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular', width: holder.current.offsetWidth || 360 });
+      window.google.accounts.id.renderButton(holder.current, { theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular', locale: getLang() === 'ne' ? 'ne' : 'en', width: holder.current.offsetWidth || 360 });
     };
     if (window.google?.accounts?.id) { render(); return; }
     const s = document.createElement('script');
-    s.src = 'https://accounts.google.com/gsi/client';
+    s.src = `https://accounts.google.com/gsi/client?hl=${getLang() === 'ne' ? 'ne' : 'en'}`;
     s.async = true;
     s.onload = render;
     s.onerror = () => setNote(t('Google sign-in needs an internet connection.'));
