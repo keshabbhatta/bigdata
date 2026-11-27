@@ -31,7 +31,14 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,jpg,webp,woff2}'],
+        // Photos are NOT downloaded when the app installs (that would cost phones megabytes on 2G);
+        // each photo is saved the first time it is shown and then works offline.
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        runtimeCaching: [{
+          urlPattern: ({ url }) => url.pathname.startsWith('/images/'),
+          handler: 'CacheFirst',
+          options: { cacheName: 'photos', expiration: { maxEntries: 60, maxAgeSeconds: 60 * 60 * 24 * 60 } },
+        }],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/metrics/],
         cleanupOutdatedCaches: true,
