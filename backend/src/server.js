@@ -57,12 +57,41 @@ app.use('/api', api);
 // Serve the built React app (single-server deployment).
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'frontend', 'dist');
 if (config.serveFrontend && fs.existsSync(dist)) {
+  // ---- Search engines -------------------------------------------------------
+  // The public address, e.g. https://sewika.onrender.com (PUBLIC_URL, or worked out from the request).
+  const baseUrl = (req) => (process.env.PUBLIC_URL || `${req.get('x-forwarded-proto') || req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+  const PUBLIC_PAGES = ['/home', '/problems/signal', '/problems/power', '/problems/shared-records', '/login'];
+  app.get('/robots.txt', (req, res) => {
+    res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${baseUrl(req)}/sitemap.xml\n`);
+  });
+  app.get('/sitemap.xml', (req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const urls = PUBLIC_PAGES.map((p) => `  <url><loc>${baseUrl(req)}${p}</loc><lastmod>${today}</lastmod></url>`).join('\n');
+    res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
+  });
+  // index.html with the full address of the share image, a canonical link and, if set,
+  // Google Search Console's ownership tag (GOOGLE_SITE_VERIFICATION).
+  const indexHtml = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
+  const sendIndex = (req, res) => {
+    const base = baseUrl(req);
+    const page = PUBLIC_PAGES.includes(req.path) ? req.path : '/home';
+    const verify = process.env.GOOGLE_SITE_VERIFICATION
+      ? `<meta name="google-site-verification" content="${process.env.GOOGLE_SITE_VERIFICATION.replace(/[^\w-]/g, '')}" />` : '';
+    res.setHeader('Cache-Control', 'no-cache');
+    res.type('html').send(indexHtml
+      .replace('content="/og-image.png"', `content="${base}/og-image.png"`)
+      .replace('</head>', `    <link rel="canonical" href="${base}${page}" />\n    <meta property="og:url" content="${base}${page}" />\n    ${verify}\n  </head>`));
+  };
+  app.get('/', sendIndex);
+  app.get('/index.html', sendIndex);
+
   app.use(express.static(dist, {
+    index: false,
     setHeaders: (res, file) => {
       if (file.endsWith('sw.js') || file.endsWith('index.html')) res.setHeader('Cache-Control', 'no-cache');
     },
   }));
-  app.get(/^(?!\/api|\/metrics).*/, (_req, res) => res.sendFile(path.join(dist, 'index.html')));
+  app.get(/^(?!\/api|\/metrics).*/, sendIndex);
   console.log('[web] serving frontend from', dist);
 }
 

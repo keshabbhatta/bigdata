@@ -115,6 +115,7 @@ const ROLES = [
 export function Home() {
   const { session } = useAuth();
   const cta = session ? { to: '/', label: t('Open the app') } : { to: '/login', label: t('Try the live demo') };
+  useEffect(() => { document.title = 'Sewika (सेविका) – Health records that work without a signal'; }, []);
 
   return (
     <div className="min-h-full scroll-smooth bg-paper">
