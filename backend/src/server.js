@@ -99,7 +99,7 @@ async function start() {
   });
 
   const server = app.listen(config.port, () => {
-    console.log(`[web] RuralHealth Sync API ${config.instanceId} listening on :${config.port}`);
+    console.log(`[web] Sewika API ${config.instanceId} listening on :${config.port}`);
   });
 
   const shutdown = async () => {

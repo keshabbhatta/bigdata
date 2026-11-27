@@ -3,7 +3,8 @@ import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { Footprints, Stethoscope, HeartPulse, Eye, EyeOff, WifiOff, Check, Circle, MailCheck } from 'lucide-react';
 import { useAuth, ROLE_TABS } from '../context/AuthContext.jsx';
 import { api } from '../services/api.js';
-import { VillageScene } from '../components/VillageScene.jsx';
+import { Photo } from '../components/Photo.jsx';
+import { PHOTOS } from '../content/photos.js';
 import { Button, Field, Input, Segmented, Select, cx } from '../components/ui.jsx';
 import { passwordChecks, passwordProblems, isEmailFormat } from '../../../shared/accounts.js';
 import { NATION, isValidWard } from '../../../shared/areas.js';
@@ -272,21 +273,22 @@ export function Login() {
 
   return (
     <div className="grid min-h-full md:grid-cols-[1.15fr_1fr]">
-      <div className="relative flex min-h-[440px] flex-col overflow-hidden bg-ink px-6 py-7 text-white md:min-h-full md:p-12">
+      <div className="relative flex flex-col bg-brand px-6 py-7 text-white md:min-h-full md:p-12">
         <Link to="/home" className="relative z-10 flex items-center gap-2.5 self-start text-white no-underline">
           <img src="/favicon.svg" alt="" className="size-[34px]" />
-          <strong className="font-condensed text-[19px] font-semibold">RuralHealth Sync</strong>
-          <span className="ml-2 rounded-full border border-white/20 px-2.5 py-0.5 text-xs text-white/70 transition-colors hover:bg-white/10">{t('About the project')}</span>
+          <strong className="font-condensed text-[19px] font-semibold">Sewika</strong>
+          <span className="ml-2 rounded-full border border-white/25 px-2.5 py-0.5 text-xs text-white/75 transition-colors hover:bg-white/10">{t('About the project')}</span>
         </Link>
-        <div className="relative z-10 mt-8 md:mt-[9vh]">
-          <h1 className="max-w-[15ch] font-condensed text-[32px] leading-[1.05] font-semibold md:text-[48px]">
+        <div className="mt-8 md:mt-[7vh]">
+          <h1 className="max-w-[17ch] font-serif text-[30px] leading-[1.12] font-semibold md:text-[44px]">
             {t("Health records that keep working when the signal doesn't.")}
           </h1>
-          <p className="mt-4 hidden max-w-[44ch] text-[#b8c5d3] sm:block">
+          <p className="mt-4 hidden max-w-[46ch] text-white/75 sm:block">
             {t("Volunteers record visits with no internet. Every reading is saved on the phone and syncs when a connection appears, and two workers can never overwrite each other's measurements.")}
           </p>
         </div>
-        <VillageScene />
+        <Photo photo={PHOTOS.fchv} tone="dark" eager className="mt-8 hidden sm:block md:mt-auto md:pt-10"
+          imgClassName="aspect-[16/10] rounded-xl" />
       </div>
 
       <div className="mx-auto flex w-full max-w-[480px] animate-rise flex-col justify-center px-6 py-8 md:p-12">
@@ -297,7 +299,7 @@ export function Login() {
         </div>
         <h2 className="font-condensed text-[30px] font-semibold">{mode === 'signin' ? t('Sign in') : t('Create an account')}</h2>
         <p className="mt-1 text-sm text-ink-soft">
-          {mode === 'signin' ? t('Welcome back. Sign in with your email or username.') : t('New to RuralHealth Sync? Choose who you are, then fill in your details.')}
+          {mode === 'signin' ? t('Welcome back. Sign in with your email or username.') : t('New to Sewika? Choose who you are, then fill in your details.')}
         </p>
 
         <div role="tablist" aria-label={t('I am a')} className="mt-5 grid grid-cols-3 gap-1 rounded-[10px] bg-line-soft p-1">

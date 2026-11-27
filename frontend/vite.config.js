@@ -15,10 +15,10 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['icons/*.png', 'favicon.svg'],
       manifest: {
-        name: 'RuralHealth Sync',
-        short_name: 'RuralHealth',
+        name: 'Sewika',
+        short_name: 'Sewika',
         description: 'Offline-first community and maternal health records for health workers.',
-        theme_color: '#16243A',
+        theme_color: '#17325a',
         background_color: '#EEF2F5',
         display: 'standalone',
         orientation: 'portrait',

@@ -66,7 +66,7 @@ export async function googleLogin(req, res) {
     return res.status(401).json({ error: `Google could not confirm this sign-in (${e.message}).` });
   }
   if (info.aud !== clientId || String(info.email_verified) !== 'true') {
-    return res.status(401).json({ error: 'This Google sign-in was not issued for RuralHealth Sync.' });
+    return res.status(401).json({ error: 'This Google sign-in was not issued for Sewika.' });
   }
   const { rows } = await query('SELECT * FROM users WHERE lower(email) = lower($1)', [info.email]);
   let user = rows[0];

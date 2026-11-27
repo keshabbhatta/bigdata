@@ -53,12 +53,9 @@ export function Dashboard() {
   return (
     <>
       <section className="relative overflow-hidden rounded-3xl bg-brand px-6 pt-7 pb-20 text-white md:px-10 md:pt-9 md:pb-24">
-        {/* slow-moving light behind the greeting */}
-        <span aria-hidden className="absolute -top-24 -left-16 size-72 animate-aurora rounded-full bg-mint/25 blur-3xl" />
-        <span aria-hidden className="absolute -right-10 -bottom-28 size-80 animate-aurora rounded-full bg-marigold/20 blur-3xl [animation-delay:-6s]" />
         <svg aria-hidden className="absolute inset-x-0 bottom-0 h-24 w-full opacity-30" viewBox="0 0 800 100" preserveAspectRatio="none">
-          <path d="M0 70 L90 40 L160 60 L260 20 L340 55 L420 35 L520 65 L610 25 L700 50 L800 30 L800 100 L0 100Z" fill="#0b5a4e" />
-          <path d="M0 85 L120 65 L230 80 L360 60 L480 82 L600 66 L720 80 L800 70 L800 100 L0 100Z" fill="#12203a" />
+          <path d="M0 70 L90 40 L160 60 L260 20 L340 55 L420 35 L520 65 L610 25 L700 50 L800 30 L800 100 L0 100Z" fill="#0b6f93" opacity=".55" />
+          <path d="M0 85 L120 65 L230 80 L360 60 L480 82 L600 66 L720 80 L800 70 L800 100 L0 100Z" fill="#17325a" />
         </svg>
         <div className="relative flex flex-wrap items-end gap-6">
           <div className="reveal">

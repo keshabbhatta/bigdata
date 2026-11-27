@@ -12,7 +12,7 @@ import { AreaPicker } from '../components/AreaPicker.jsx';
 import { NATION, isValidWard } from '../../../shared/areas.js';
 import { t, num } from '../i18n/index.jsx';
 
-const C = { pine: '#0e6b5c', lali: '#c42847', marigold: '#e9a23b', sky: '#2f6fb0', ink: '#24364f', grid: '#e6ebf0', soft: '#5b6b7f' };
+const C = { pine: '#0b6f93', lali: '#c22a40', marigold: '#eaa53c', sky: '#284f8a', ink: '#2d3a50', grid: '#ebe5d8', soft: '#5f6878' };
 const TYPE_COLORS = { ANC: C.lali, general: C.ink, immunization: C.sky, referral: C.marigold, PNC: C.pine };
 const TYPE_NAMES = { ANC: 'Antenatal', PNC: 'Postnatal', general: 'General', immunization: 'Immunization', referral: 'Referral' };
 const axis = { fontSize: 12, fill: C.soft };
@@ -20,6 +20,8 @@ const CACHE = 'rh.analytics';
 
 export function Analytics() {
   const { user } = useAuth();
+  // Spark / Kafka internals are for the administrator; workers and doctors see the health numbers only.
+  const isAdmin = user.role === 'admin';
   const sync = useSync();
   const [ward, setWard] = useState('');
   const [data, setData] = useState(() => { try { return JSON.parse(localStorage.getItem(CACHE)); } catch { return null; } });
@@ -50,7 +52,7 @@ export function Analytics() {
 
   return (
     <>
-      <PageHead title={t('Analytics')} subtitle={t("Health activity across villages. Heavy numbers are computed by Spark jobs from the Kafka event stream, separately from the app's own database work.")}>
+      <PageHead title={t('Analytics')} subtitle={isAdmin ? t("Health activity across villages. Heavy numbers are computed by Spark jobs from the Kafka event stream, separately from the app's own database work.") : t('Health activity across villages: patients, pregnancies, visits and follow-ups.')}>
         {!(user.wards.length === 1 && isValidWard(user.wards[0])) && (
           <div className="w-full rounded-xl border border-line bg-white p-3 md:w-[560px]">
             <div className="mb-2 text-[13px] font-semibold text-ink-2">{t('Show numbers for')}</div>
@@ -61,12 +63,12 @@ export function Analytics() {
 
       {data && (
         <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-[13px]">
+          {isAdmin && <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-[13px]">
             {data.source === 'spark' ? <Zap size={15} className="text-marigold-deep" /> : <Database size={15} className="text-sky" />}
             {data.source === 'spark'
               ? <>{t('Computed by the Spark batch job {time}', { time: relativeTime(data.computedAt) })}</>
               : <>{t('Live database query. Run the Spark batch job to precompute these numbers.')}</>}
-          </span>
+          </span>}
           {sync.isOffline && <Badge tone="marigold">{t('Offline: showing results saved {time}', { time: relativeTime(data.cachedAt) })}</Badge>}
         </div>
       )}
@@ -149,6 +151,7 @@ export function Analytics() {
             </Panel>
           </div>
 
+          {isAdmin && (
           <Panel className="mt-5">
             <PanelHead title={t('Live event stream')} hint={t('Kafka events per minute, counted by Spark Structured Streaming')} />
             {streamByMinute.length === 0 ? (
@@ -170,8 +173,9 @@ export function Analytics() {
               </div>
             )}
           </Panel>
+          )}
 
-          {data.jobs?.length > 0 && (
+          {isAdmin && data.jobs?.length > 0 && (
             <Panel className="mt-5">
               <PanelHead title={t('Spark job runs')} />
               <Table head={[t('Job'), t('Finished'), t('Duration'), t('Rows read'), t('Rows written')]}>

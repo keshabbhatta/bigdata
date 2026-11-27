@@ -295,7 +295,7 @@ export default {
   "Household": "घरधुरी",
   "Household and referral records are shared. When two people update them offline, simple caching silently loses one update.": "घरधुरी र रेफरलका रेकर्ड साझा हुन्छन्। दुई जनाले अफलाइनमा अद्यावधिक गर्दा साधारण क्यासले एउटा अद्यावधिक चुपचाप हराउँछ।",
   "Household no.": "घर नं.",
-  "How RuralHealth Sync solves it": "RuralHealth Sync ले यसलाई कसरी समाधान गर्छ",
+  "How Sewika solves it": "सेविकाले यसलाई कसरी समाधान गर्छ",
   "How a visit travels from the village to the clinic": "एउटा भेटको रेकर्ड गाउँबाट क्लिनिकसम्म कसरी पुग्छ",
   "How it works": "यो कसरी चल्छ",
   "How we solve it": "हामी कसरी समाधान गर्छौं",

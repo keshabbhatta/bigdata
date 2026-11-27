@@ -4,6 +4,9 @@ import '@fontsource/ibm-plex-sans/latin-400.css';
 import '@fontsource/ibm-plex-sans/latin-500.css';
 import '@fontsource/ibm-plex-sans/latin-600.css';
 import '@fontsource/ibm-plex-sans-condensed/latin-600.css';
+import '@fontsource/ibm-plex-serif/latin-500.css';
+import '@fontsource/ibm-plex-serif/latin-600.css';
+import '@fontsource/ibm-plex-serif/latin-500-italic.css';
 // Devanagari letters for the Nepali language (same IBM Plex family).
 import '@fontsource/ibm-plex-sans-devanagari/devanagari-400.css';
 import '@fontsource/ibm-plex-sans-devanagari/devanagari-500.css';

@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Button, cx } from '../components/ui.jsx';
+import { Photo } from '../components/Photo.jsx';
+import { PHOTOS } from '../content/photos.js';
 import { t, LanguageSwitcher } from '../i18n/index.jsx';
 
 // Translate plain text; leave numbers and readings ("120/80", "BP 140/90") untouched where there is no translation.
@@ -15,7 +17,7 @@ const tr = (s) => (typeof s === 'string' ? t(s) : s);
 
 /* ------------------------------------------------------------------ drawing helpers */
 
-const C = { ink: '#12203a', soft: '#5a6b80', line: '#dce3ea', paper: '#f2f5f9', pine: '#0d7a68', mint: '#5fe0c0', mari: '#f2a93b', lali: '#d23a5f', sky: '#2f6fb0', white: '#ffffff' };
+const C = { ink: '#1c2638', soft: '#5f6878', line: '#e2dacb', paper: '#f7f3eb', pine: '#0b6f93', mint: '#7ccbe6', mari: '#eaa53c', lali: '#c22a40', sky: '#284f8a', white: '#ffffff' };
 const T = ({ x, y, children, size = 15, color = C.ink, weight = 600, anchor = 'middle' }) => (
   <text x={x} y={y} fontSize={size} fill={color} fontWeight={weight} textAnchor={anchor} fontFamily="IBM Plex Sans, IBM Plex Sans Devanagari, system-ui, sans-serif">{tr(children)}</text>
 );
@@ -241,12 +243,12 @@ function SharedProblemPicture() {
 
 function SharedSolutionPicture() {
   return (
-    <Figure label="RuralHealth Sync keeps both readings and shows them side by side; a doctor chooses the correct one and every phone gets the decision."
-      caption="Picture 6. RuralHealth Sync notices that neither worker saw the other's reading, keeps both, and lets a doctor decide.">
+    <Figure label="Sewika keeps both readings and shows them side by side; a doctor chooses the correct one and every phone gets the decision."
+      caption="Picture 6. Sewika notices that neither worker saw the other's reading, keeps both, and lets a doctor decide.">
       <rect width="640" height="340" fill={C.white} />
       <g transform="translate(20 50)">
         <rect width="250" height="210" rx="14" fill="#fce8ed" stroke={C.lali} strokeWidth="2" />
-        <T x={125} y={32} size={14} color="#a0243f">Conflicting readings, both kept</T>
+        <T x={125} y={32} size={14} color="#95192d">Conflicting readings, both kept</T>
         {[['120/80', 'Sita, 10:12, phone A'], ['140/90', 'Gita, 10:40, phone B']].map(([v, who], i) => (
           <g key={v} transform={`translate(15 ${50 + i * 74})`}>
             <rect width="220" height="62" rx="8" fill={C.white} stroke={C.line} />
@@ -440,6 +442,8 @@ const PROBLEMS = {
   },
 };
 const ORDER = ['signal', 'power', 'shared-records'];
+// A real photograph shown at the top of each problem page.
+const PHOTO_FOR = { signal: PHOTOS.village, power: PHOTOS.terraces, 'shared-records': PHOTOS.vaccination };
 
 /* ------------------------------------------------------------------ page */
 
@@ -474,7 +478,7 @@ export function ProblemDetail() {
           <Link to="/home#problem" className="inline-flex items-center gap-2 text-sm font-semibold text-white/85 no-underline hover:text-white">
             <ArrowLeft size={17} /> <span className="hidden sm:inline">{t('Back to home')}</span><span className="sm:hidden">{t('Back')}</span>
           </Link>
-          <span className="ml-1 hidden truncate font-condensed text-lg font-semibold sm:inline">RuralHealth Sync</span>
+          <span className="ml-1 hidden truncate font-condensed text-lg font-semibold sm:inline">Sewika</span>
           <div className="ml-auto flex items-center gap-2">
             <LanguageSwitcher tone="dark" />
             <Button as={Link} to={session ? '/' : '/login'} variant="accent" size="sm" className="h-9 px-4">{session ? t('Open the app') : t('Sign in')}</Button>
@@ -484,12 +488,17 @@ export function ProblemDetail() {
 
       <section className="bg-brand text-white">
         <div className="mx-auto max-w-[1000px] px-4 py-12 md:px-8 md:py-16">
-          <p className="text-sm font-semibold tracking-wide text-mint uppercase">{t('Problem {n} of 3', { n: p.n })}</p>
-          <h1 className="mt-2 flex items-center gap-3 font-condensed text-[34px] leading-tight font-semibold md:text-[48px]">
-            <span className="grid size-12 flex-none place-items-center rounded-2xl bg-white/10"><p.icon size={26} /></span>
+          <div className="grid items-center gap-8 md:grid-cols-[1.25fr_1fr]">
+          <div>
+          <p className="text-sm font-semibold text-mint">{t('Problem {n} of 3', { n: p.n })}</p>
+          <h1 className="mt-2 flex items-center gap-3 font-serif text-[32px] leading-tight font-semibold md:text-[44px]">
+            <p.icon size={28} className="flex-none text-mint" />
             {t(p.title)}
           </h1>
           <p className="mt-4 max-w-[62ch] text-lg text-white/85">{t(p.summary)}</p>
+          </div>
+          <Photo photo={PHOTO_FOR[slug]} tone="dark" eager imgClassName="aspect-[4/3] rounded-lg" />
+          </div>
           <nav aria-label={t('On this page')} className="mt-6 flex flex-wrap gap-2 text-sm">
             {[['what', 'In simple words'], ['day', 'A day in the field'], ['why', 'Why apps fail'], ['solve', 'How we solve it'], ['try', 'Try it yourself'], ['words', 'Words to know']].map(([id, label]) => (
               <a key={id} href={`#${id}`} className="rounded-full border border-white/20 px-3 py-1.5 text-white/85 no-underline hover:bg-white/10">{t(label)}</a>
@@ -544,7 +553,7 @@ export function ProblemDetail() {
         </div>
 
         <div id="solve" className="scroll-mt-20">
-          <Section icon={CheckCircle2} title={t('How RuralHealth Sync solves it')}>
+          <Section icon={CheckCircle2} title={t('How Sewika solves it')}>
             <ol className="space-y-4">
               {p.solution.map(([title, text], i) => (
                 <li key={title} className="flex gap-4 rounded-2xl border border-line p-4 sm:p-5">

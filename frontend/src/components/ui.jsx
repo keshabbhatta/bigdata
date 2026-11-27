@@ -170,7 +170,7 @@ export function SkeletonRows({ rows = 3 }) {
   );
 }
 
-const AVATAR_COLORS = ['#0d7a68', '#2f6fb0', '#a0243f', '#9a5f06', '#1e3150', '#5a4a8a'];
+const AVATAR_COLORS = ['#0b6f93', '#284f8a', '#95192d', '#8f5a0b', '#2d3a50', '#6a4c7d'];
 export function Avatar({ name = '?', seed = '', size = 'md' }) {
   const initials = name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join('');
   let h = 0;
