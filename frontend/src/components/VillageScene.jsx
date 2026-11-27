@@ -4,6 +4,7 @@
 // when she reaches the health post the saved records travel up to the signal
 // tower and sync. Everything runs on one SVG (SMIL) timeline so it stays in step.
 import { useEffect, useRef } from 'react';
+import { t } from '../i18n/index.jsx';
 
 const T = 12; // seconds per loop
 const TRAIL = 'M40 512 L95 500 L150 494 L190 486 L240 476 L300 470 L345 480 L395 494 L450 502 L495 494 L545 480 L610 468';
@@ -36,7 +37,7 @@ export function VillageScene() {
   return (
     <svg ref={ref} className="absolute inset-x-0 bottom-0 h-[58%] w-full md:h-[64%]" viewBox="0 0 800 600"
       preserveAspectRatio="xMinYMax slice" role="img"
-      aria-label="A health volunteer visits three households offline, then her records sync at the health post.">
+      aria-label={t('A health volunteer visits three households offline, then her records sync at the health post.')}>
       <defs>
         <radialGradient id="glow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#E9A23B" stopOpacity=".55" />
@@ -141,8 +142,8 @@ export function VillageScene() {
           <animate attributeName="fill" {...discrete(['#E9A23B', '#3ccfa9'], [0, 0.68])} dur={`${T}s`} repeatCount="indefinite" />
         </circle>
         {PHASES.map((p) => (
-          <text key={p.text} x="36" y="22" fill="#EEF2F5" fontSize="14" fontFamily="IBM Plex Sans, system-ui, sans-serif" fontWeight="500" opacity={p.from === 0 ? 1 : 0}>
-            {p.text}
+          <text key={p.text} x="36" y="22" fill="#EEF2F5" fontSize="14" fontFamily="IBM Plex Sans, IBM Plex Sans Devanagari, system-ui, sans-serif" fontWeight="500" opacity={p.from === 0 ? 1 : 0}>
+            {t(p.text)}
             <animate attributeName="opacity" dur={`${T}s`} repeatCount="indefinite"
               {...(p.from === 0 ? discrete([1, 0], [0, p.to]) : p.to === 1 ? discrete([0, 1], [0, p.from]) : discrete([0, 1, 0], [0, p.from, p.to]))} />
           </text>

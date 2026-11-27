@@ -8,15 +8,16 @@ import { useSync } from '../context/SyncContext.jsx';
 import { usePregnancies } from '../hooks/useRecords.js';
 import { gestationalWeeks, riskFlags } from '../../../shared/schema.js';
 import { Avatar, Badge, Button, Empty, Figures, Panel, PanelHead, SkeletonRows, WeeksBar, cx } from '../components/ui.jsx';
-import { daysFromToday, formatDate, today, wardFullName, nameParts } from '../utils/format.js';
+import { daysFromToday, formatDate, formatToday, today, wardFullName, nameParts } from '../utils/format.js';
+import { t } from '../i18n/index.jsx';
 
 const VISIT_LABEL = { ANC: 'Antenatal check', PNC: 'Postnatal check', general: 'General visit', immunization: 'Immunization', referral: 'Referral' };
 
 function dueLabel(d) {
-  if (d === null) return { text: 'No date', tone: 'neutral' };
-  if (d < 0) return { text: `${-d} day${d === -1 ? '' : 's'} overdue`, tone: 'lali' };
-  if (d === 0) return { text: 'Today', tone: 'marigold' };
-  return { text: `In ${d} day${d === 1 ? '' : 's'}`, tone: d <= 3 ? 'marigold' : 'neutral' };
+  if (d === null) return { text: t('No date'), tone: 'neutral' };
+  if (d < 0) return { text: d === -1 ? t('1 day overdue') : t('{n} days overdue', { n: -d }), tone: 'lali' };
+  if (d === 0) return { text: t('Today'), tone: 'marigold' };
+  return { text: d === 1 ? t('In 1 day') : t('In {n} days', { n: d }), tone: d <= 3 ? 'marigold' : 'neutral' };
 }
 
 export function Dashboard() {
@@ -46,7 +47,7 @@ export function Dashboard() {
     .sort((a, b) => (b.openConflicts || 0) - (a.openConflicts || 0) || b.flags.length - a.flags.length), [active]);
 
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const greeting = hour < 12 ? t('Good morning') : hour < 17 ? t('Good afternoon') : t('Good evening');
   const loading = !counts || !pregnancies;
 
   return (
@@ -61,31 +62,31 @@ export function Dashboard() {
         </svg>
         <div className="relative flex flex-wrap items-end gap-6">
           <div className="reveal">
-            <p className="text-white/70">{new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-            <h1 className="mt-1 font-condensed text-[32px] leading-tight font-semibold tracking-tight md:text-[44px]">{greeting}, {nameParts(user.name).greeting}</h1>
+            <p className="text-white/70">{formatToday()}</p>
+            <h1 className="mt-1 font-condensed text-[32px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('{greeting}, {name}', { greeting, name: nameParts(user.name).greeting })}</h1>
             <p className="mt-1 text-white/75">
-              {user.wards.map(wardFullName).join('; ')}. {due.length ? `${due.length} mother${due.length > 1 ? 's are' : ' is'} due for a check-up this week.` : 'No check-ups due this week.'}
+              {user.wards.map(wardFullName).join('; ')}. {due.length ? (due.length === 1 ? t('1 mother is due for a check-up this week.') : t('{n} mothers are due for a check-up this week.', { n: due.length })) : t('No check-ups due this week.')}
             </p>
           </div>
           <div className="reveal ml-auto flex flex-wrap gap-2.5" style={{ '--i': 2 }}>
-            <Button as={Link} to="/patients" state={{ add: true }} variant="accent"><UserPlus size={17} /> Register patient</Button>
-            <Button as={Link} to="/maternal" variant="glass"><Baby size={17} /> Pregnancies</Button>
+            <Button as={Link} to="/patients" state={{ add: true }} variant="accent"><UserPlus size={17} /> {t('Register patient')}</Button>
+            <Button as={Link} to="/maternal" variant="glass"><Baby size={17} /> {t('Pregnancies')}</Button>
           </div>
         </div>
       </section>
 
       <Figures className="relative z-10 mx-3 -mt-14 md:mx-6" items={[
-        { label: 'Registered patients', value: counts?.patients, icon: Users },
-        { label: 'Active pregnancies', value: active.length, tone: 'good', icon: Baby },
-        { label: 'Visits this month', value: counts?.visitsThisMonth, icon: Stethoscope },
-        { label: sync.pending ? 'Changes waiting to sync' : 'Everything synced', value: sync.pending, tone: sync.pending ? 'warn' : 'good', icon: CloudUpload },
+        { label: t('Registered patients'), value: counts?.patients, icon: Users },
+        { label: t('Active pregnancies'), value: active.length, tone: 'good', icon: Baby },
+        { label: t('Visits this month'), value: counts?.visitsThisMonth, icon: Stethoscope },
+        { label: sync.pending ? t('Changes waiting to sync') : t('Everything synced'), value: sync.pending, tone: sync.pending ? 'warn' : 'good', icon: CloudUpload },
       ]} />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel i={3}>
-          <PanelHead title="Due for an antenatal visit" hint="Next 7 days" icon={CalendarClock} />
+          <PanelHead title={t('Due for an antenatal visit')} hint={t('Next 7 days')} icon={CalendarClock} />
           {loading ? <SkeletonRows /> : due.length === 0 ? (
-            <Empty title="No visits due this week">Pregnancies with a next visit date in the coming week appear here.</Empty>
+            <Empty title={t('No visits due this week')}>{t('Pregnancies with a next visit date in the coming week appear here.')}</Empty>
           ) : (
             <ul>
               {due.slice(0, 8).map((p, idx) => {
@@ -96,7 +97,7 @@ export function Dashboard() {
                       <Avatar name={p.patient.data.name} seed={p.patient.data.village} />
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold">{p.patient.data.name}</div>
-                        <div className="text-[13px] text-ink-soft">{p.patient.data.village}, visit on {formatDate(p.data.nextVisitDate)}</div>
+                        <div className="text-[13px] text-ink-soft">{t('{village}, visit on {date}', { village: p.patient.data.village, date: formatDate(p.data.nextVisitDate) })}</div>
                       </div>
                       <Badge tone={l.tone}>{l.text}</Badge>
                     </Link>
@@ -108,9 +109,9 @@ export function Dashboard() {
         </Panel>
 
         <Panel i={4}>
-          <PanelHead title="Needs attention" hint="Danger signs, high risk or conflicts" icon={AlertTriangle} />
+          <PanelHead title={t('Needs attention')} hint={t('Danger signs, high risk or conflicts')} icon={AlertTriangle} />
           {loading ? <SkeletonRows /> : attention.length === 0 ? (
-            <Empty title="Nothing needs attention">High-risk pregnancies and conflicting readings appear here.</Empty>
+            <Empty title={t('Nothing needs attention')}>{t('High-risk pregnancies and conflicting readings appear here.')}</Empty>
           ) : (
             <ul>
               {attention.slice(0, 8).map((p, idx) => (
@@ -119,8 +120,8 @@ export function Dashboard() {
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold">{p.patient.data.name}</div>
                       <div className="mt-1 flex flex-wrap gap-1.5">
-                        {p.openConflicts > 0 && <Badge tone="lali">{p.openConflicts} conflicting reading{p.openConflicts > 1 ? 's' : ''}</Badge>}
-                        {p.flags.map((f) => <Badge key={f} tone={f === 'Marked high risk' ? 'marigold' : 'lali'}>{f}</Badge>)}
+                        {p.openConflicts > 0 && <Badge tone="lali">{p.openConflicts === 1 ? t('1 conflicting reading') : t('{n} conflicting readings', { n: p.openConflicts })}</Badge>}
+                        {p.flags.map((f) => <Badge key={f} tone={f === 'Marked high risk' ? 'marigold' : 'lali'}>{t(f)}</Badge>)}
                       </div>
                     </div>
                     <WeeksBar weeks={gestationalWeeks(p.data.lmp)} />
@@ -133,10 +134,10 @@ export function Dashboard() {
       </div>
 
       <Panel className="mt-5" i={5}>
-        <PanelHead title="Latest visits" hint="Unsynced visits are marked in yellow" icon={ClipboardList} />
+        <PanelHead title={t('Latest visits')} hint={t('Unsynced visits are marked in yellow')} icon={ClipboardList} />
         {counts && counts.recent.length === 0 ? (
-          <Empty title="No records yet" action={<Link to="/patients" className="font-semibold text-pine">Register the first patient</Link>}>
-            Records appear after the first sync or when you register a patient.
+          <Empty title={t('No records yet')} action={<Link to="/patients" className="font-semibold text-pine">{t('Register the first patient')}</Link>}>
+            {t('Records appear after the first sync or when you register a patient.')}
           </Empty>
         ) : (
           <ul>
@@ -148,12 +149,12 @@ export function Dashboard() {
                   <Link to={`/patients/${pid}`} className="flex items-center gap-3.5 px-5 py-3 text-inherit no-underline transition-colors hover:bg-pine-wash/40">
                     <span className={cx('size-2 flex-none rounded-full', r.pendingCount ? 'bg-marigold' : 'bg-pine')} />
                     <div className="min-w-0 flex-1">
-                      <div className="font-semibold">{name || 'Unknown patient'}</div>
+                      <div className="font-semibold">{name || t('Unknown patient')}</div>
                       <div className="text-[13px] text-ink-soft">
-                        {VISIT_LABEL[r.data.type] || 'Visit'}{r.data.findings ? `: ${r.data.findings}` : ''}
+                        {t(VISIT_LABEL[r.data.type] || 'Visit')}{r.data.findings ? `: ${r.data.findings}` : ''}
                       </div>
                     </div>
-                    <span className="text-[13px] whitespace-nowrap text-ink-soft">{r.pendingCount ? 'Waiting to sync' : formatDate(r.data.date)}</span>
+                    <span className="text-[13px] whitespace-nowrap text-ink-soft">{r.pendingCount ? t('Waiting to sync') : formatDate(r.data.date)}</span>
                   </Link>
                 </li>
               );

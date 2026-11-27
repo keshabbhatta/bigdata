@@ -8,6 +8,9 @@ import { usePatients } from '../hooks/useRecords.js';
 import { RecordForm, PATIENT_FIELDS } from '../components/RecordForm.jsx';
 import { Avatar, Badge, Button, Empty, Input, PageHead, Panel, Select } from '../components/ui.jsx';
 import { scopesLabel } from '../utils/format.js';
+import { t } from '../i18n/index.jsx';
+
+const SEX = { female: 'Female', male: 'Male', other: 'Other' };
 
 export function Patients() {
   const { user } = useAuth();
@@ -30,26 +33,26 @@ export function Patients() {
 
   return (
     <>
-      <PageHead title="Patients" subtitle={patients ? `${patients.length} people registered in ${scopesLabel(user.wards)}.` : ' '}>
-        <Button onClick={() => setAdding(true)}><Plus size={18} /> Register patient</Button>
+      <PageHead title={t('Patients')} subtitle={patients ? t('{n} people registered in {area}.', { n: patients.length, area: scopesLabel(user.wards) }) : ' '}>
+        <Button onClick={() => setAdding(true)}><Plus size={18} /> {t('Register patient')}</Button>
       </PageHead>
 
       <div className="mb-4 flex flex-wrap gap-2.5">
         <div className="relative max-w-[420px] min-w-[220px] flex-1">
           <Search size={17} className="absolute top-1/2 left-3 -translate-y-1/2 text-ink-soft" />
-          <Input className="pl-[38px]" placeholder="Search by name, village, household or phone" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search patients" />
+          <Input className="pl-[38px]" placeholder={t('Search by name, village, household or phone')} value={q} onChange={(e) => setQ(e.target.value)} aria-label={t('Search patients')} />
         </div>
-        <Select className="w-auto" value={village} onChange={(e) => setVillage(e.target.value)} aria-label="Filter by village">
-          <option value="">All villages</option>
+        <Select className="w-auto" value={village} onChange={(e) => setVillage(e.target.value)} aria-label={t('Filter by village')}>
+          <option value="">{t('All villages')}</option>
           {villages.map((v) => <option key={v}>{v}</option>)}
         </Select>
       </div>
 
       <Panel>
         {patients && list.length === 0 ? (
-          <Empty title={patients.length ? 'No patients match your search' : 'No patients yet'}
-            action={!patients.length && <Button onClick={() => setAdding(true)}>Register patient</Button>}>
-            {patients.length ? 'Try another name or clear the village filter.' : 'Patients you register appear here, even before they sync.'}
+          <Empty title={patients.length ? t('No patients match your search') : t('No patients yet')}
+            action={!patients.length && <Button onClick={() => setAdding(true)}>{t('Register patient')}</Button>}>
+            {patients.length ? t('Try another name or clear the village filter.') : t('Patients you register appear here, even before they sync.')}
           </Empty>
         ) : (
           <ul>
@@ -61,13 +64,13 @@ export function Patients() {
                   <div className="min-w-0 flex-1">
                     <div className="font-semibold">{p.data.name}</div>
                     <div className="text-[13px] text-ink-soft">
-                      {[p.data.age && `${p.data.age} yrs`, p.data.sex, p.data.village, p.data.household].filter(Boolean).join(', ')}
+                      {[p.data.age && t('{n} yrs', { n: p.data.age }), SEX[p.data.sex] ? t(SEX[p.data.sex]) : p.data.sex, p.data.village, p.data.household].filter(Boolean).join(', ')}
                     </div>
                   </div>
                   <div className="flex flex-wrap justify-end gap-1.5">
-                    {pregnant.has(p.id) && <Badge tone="pine">Pregnant</Badge>}
-                    {p.openConflicts > 0 && <Badge tone="lali">Conflict</Badge>}
-                    {p.pendingCount > 0 && <Badge tone="marigold">Not synced</Badge>}
+                    {pregnant.has(p.id) && <Badge tone="pine">{t('Pregnant')}</Badge>}
+                    {p.openConflicts > 0 && <Badge tone="lali">{t('Conflict')}</Badge>}
+                    {p.pendingCount > 0 && <Badge tone="marigold">{t('Not synced')}</Badge>}
                   </div>
                 </button>
               </li>
@@ -78,7 +81,7 @@ export function Patients() {
 
       {adding && (
         <RecordForm
-          entity="patient" title="Register patient" fields={PATIENT_FIELDS} wards={user.wards} villages={villages}
+          entity="patient" title={t('Register patient')} fields={PATIENT_FIELDS} wards={user.wards} villages={villages}
           fixed={{ defaults: { sex: 'female' } }}
           onClose={(saved) => { setAdding(false); if (saved) navigate(`/patients/${saved.id}`); }}
         />

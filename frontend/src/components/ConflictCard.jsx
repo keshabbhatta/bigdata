@@ -11,6 +11,7 @@ import { ENTITIES } from '../../../shared/schema.js';
 import { Badge, Button, Field, Input, cx } from './ui.jsx';
 import { FIELD_LABELS, UNITS, formatDateTime } from '../utils/format.js';
 import { hlcToDate } from '../../../shared/hlc.js';
+import { t, tMsg } from '../i18n/index.jsx';
 
 export function ConflictCard({ conflict, showPatient = true }) {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export function ConflictCard({ conflict, showPatient = true }) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const spec = ENTITIES[conflict.entity]?.fields[conflict.field];
-  const label = FIELD_LABELS[conflict.field] || spec?.label || conflict.field;
+  const label = t(FIELD_LABELS[conflict.field] || spec?.label || conflict.field);
   const unit = UNITS[conflict.field] || '';
   const canResolve = isStaff(user) && conflict.status === 'open';
 
@@ -32,10 +33,10 @@ export function ConflictCard({ conflict, showPatient = true }) {
     setBusy(true);
     try {
       await api.resolveConflict(conflict.id, value, note);
-      toast('Conflict resolved. Every phone will receive the decision on its next sync.');
+      toast(t('Conflict resolved. Every phone will receive the decision on its next sync.'));
       sync.syncNow();
     } catch (e) {
-      toast(e.offline ? 'Connect to the internet to resolve conflicts.' : e.message, 'bad');
+      toast(e.offline ? t('Connect to the internet to resolve conflicts.') : tMsg(e.message), 'bad');
     } finally {
       setBusy(false);
     }
@@ -46,10 +47,10 @@ export function ConflictCard({ conflict, showPatient = true }) {
       <div className="flex flex-wrap items-center gap-3 bg-lali-wash px-4.5 py-3">
         <GitMerge size={18} className="text-lali-deep" />
         <span className="font-semibold text-lali-deep">
-          {label}{showPatient && conflict.patient ? ` for ${conflict.patient.data.name}` : ''}
+          {showPatient && conflict.patient ? t('{field} for {name}', { field: label, name: conflict.patient.data.name }) : label}
         </span>
         <span className="ml-auto text-[13px] text-lali-deep">
-          {conflict.status === 'open' ? `${conflict.observations.length} different readings recorded while offline` : 'Resolved'}
+          {conflict.status === 'open' ? t('{n} different readings recorded while offline', { n: conflict.observations.length }) : t('Resolved')}
         </span>
       </div>
 
@@ -63,13 +64,13 @@ export function ConflictCard({ conflict, showPatient = true }) {
                 {String(o.value ?? '–')}<small className="ml-1 font-sans text-[13px] font-medium text-ink-soft">{unit}</small>
               </div>
               <div className="text-[13px] text-ink-soft">
-                Recorded by <b className="text-ink">{o.userName || 'Unknown'}</b><br />
-                {formatDateTime(when)} on {o.deviceId === 'server' ? 'the server' : `phone ${o.deviceId?.replace('dev-', '') || '?'}`}
+                {t('Recorded by')} <b className="text-ink">{o.userName || t('Unknown')}</b><br />
+                {formatDateTime(when)}, {o.deviceId === 'server' ? t('on the server') : t('on phone {id}', { id: o.deviceId?.replace('dev-', '') || '?' })}
               </div>
               {canResolve && (
                 <Button size="sm" variant={isChosen ? 'primary' : 'ghost'} className="mt-1.5 self-start"
                   onClick={() => { setChosen(o.value); setCustom(''); }}>
-                  {isChosen ? 'Selected' : 'Keep this reading'}
+                  {isChosen ? t('Selected') : t('Keep this reading')}
                 </Button>
               )}
             </div>
@@ -79,26 +80,26 @@ export function ConflictCard({ conflict, showPatient = true }) {
 
       {conflict.status === 'resolved' && conflict.resolution && (
         <div className="px-4.5 pb-4 text-sm">
-          <Badge tone="pine">Kept {String(conflict.resolution.value)} {unit}</Badge>
-          <span className="ml-2 text-ink-soft">by {conflict.resolution.by}, {formatDateTime(conflict.resolution.at)}{conflict.resolution.note ? `. ${conflict.resolution.note}` : ''}</span>
+          <Badge tone="pine">{t('Kept {value}', { value: `${String(conflict.resolution.value)} ${unit}`.trim() })}</Badge>
+          <span className="ml-2 text-ink-soft">{t('by {name}', { name: conflict.resolution.by })}, {formatDateTime(conflict.resolution.at)}{conflict.resolution.note ? `. ${conflict.resolution.note}` : ''}</span>
         </div>
       )}
 
       {canResolve && (
         <div className="flex flex-wrap items-end gap-2.5 px-4.5 pb-4">
-          <Field label="Or enter a new measurement" className="min-w-[160px] flex-1">
+          <Field label={t('Or enter a new measurement')} className="min-w-[160px] flex-1">
             <Input type={spec?.type === 'number' ? 'number' : 'text'} step="any" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder={unit} />
           </Field>
-          <Field label="Note for the record" className="min-w-[200px] flex-[2]">
-            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="For example: rechecked at the health post" />
+          <Field label={t('Note for the record')} className="min-w-[200px] flex-[2]">
+            <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder={t('For example: rechecked at the health post')} />
           </Field>
           <Button onClick={resolve} disabled={busy || (chosen === null && custom === '')}>
-            {busy ? 'Saving…' : 'Resolve conflict'}
+            {busy ? t('Saving…') : t('Resolve conflict')}
           </Button>
         </div>
       )}
       {!isStaff(user) && conflict.status === 'open' && (
-        <p className="px-4.5 pb-4 text-[13px] text-ink-soft">A supervisor will review these readings. Both are kept until then.</p>
+        <p className="px-4.5 pb-4 text-[13px] text-ink-soft">{t('A supervisor will review these readings. Both are kept until then.')}</p>
       )}
     </div>
   );

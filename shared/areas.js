@@ -16,11 +16,15 @@ import { PROVINCES, DISTRICTS, LOCAL_LEVELS } from './nepal-data.js';
 export const NATION = 'NP';
 
 export const LOCAL_TYPES = {
-  1: { name: 'Metropolitan City', short: 'MC' },
-  2: { name: 'Sub-Metropolitan City', short: 'SMC' },
-  3: { name: 'Municipality', short: 'M' },
-  4: { name: 'Rural Municipality', short: 'RM' },
+  1: { name: 'Metropolitan City', short: 'MC', nameNe: 'महानगरपालिका', shortNe: 'महानगरपालिका' },
+  2: { name: 'Sub-Metropolitan City', short: 'SMC', nameNe: 'उपमहानगरपालिका', shortNe: 'उपमहानगरपालिका' },
+  3: { name: 'Municipality', short: 'M', nameNe: 'नगरपालिका', shortNe: 'नगरपालिका' },
+  4: { name: 'Rural Municipality', short: 'RM', nameNe: 'गाउँपालिका', shortNe: 'गाउँपालिका' },
 };
+
+const DEVANAGARI = '०१२३४५६७८९';
+/** 12 -> "१२" (Nepali digits for ward numbers in Nepali labels). */
+export const toNepaliDigits = (n) => String(n).replace(/[0-9]/g, (d) => DEVANAGARI[d]);
 
 const pad = (n, w) => String(n).padStart(w, '0');
 export const provinceCode = (p) => `P${p}`;
@@ -30,19 +34,24 @@ export const wardCode = (p, d, l, w) => `${localCode(p, d, l)}-W${pad(w, 2)}`;
 
 const byName = (a, b) => a.name.localeCompare(b.name);
 
-export const provinces = PROVINCES.map(([id, name]) => ({ id, name, code: provinceCode(id) }));
+export const provinces = PROVINCES.map(([id, name, nameNe]) => ({ id, name, nameNe, code: provinceCode(id) }));
 const provinceById = new Map(provinces.map((p) => [p.id, p]));
 
-export const districts = DISTRICTS.map(([id, provinceId, name]) => ({ id, provinceId, name, code: districtCode(provinceId, id) }));
+export const districts = DISTRICTS.map(([id, provinceId, name, nameNe]) => ({ id, provinceId, name, nameNe, code: districtCode(provinceId, id) }));
 const districtById = new Map(districts.map((d) => [d.id, d]));
 
-export const localLevels = LOCAL_LEVELS.map(([id, districtId, type, name, wards]) => {
+export const localLevels = LOCAL_LEVELS.map(([id, districtId, type, name, wards, nameNe]) => {
   const provinceId = districtById.get(districtId).provinceId;
   return {
-    id, districtId, provinceId, name, wards, type: LOCAL_TYPES[type],
-    fullName: `${name} ${LOCAL_TYPES[type].name}`, code: localCode(provinceId, districtId, id),
+    id, districtId, provinceId, name, nameNe, wards, type: LOCAL_TYPES[type],
+    fullName: `${name} ${LOCAL_TYPES[type].name}`, fullNameNe: `${nameNe} ${LOCAL_TYPES[type].nameNe}`,
+    code: localCode(provinceId, districtId, id),
   };
 });
+
+/** Name of a province / district / local level in the chosen language. */
+export const nameIn = (item, lang) => (lang === 'ne' && item?.nameNe ? item.nameNe : item?.name);
+export const fullNameIn = (local, lang) => (lang === 'ne' ? local.fullNameNe : local.fullName);
 const localById = new Map(localLevels.map((l) => [l.id, l]));
 
 export const TOTALS = {
@@ -52,8 +61,9 @@ export const TOTALS = {
   wards: localLevels.reduce((n, l) => n + l.wards, 0),
 };
 
-export const districtsOf = (provinceId) => districts.filter((d) => d.provinceId === Number(provinceId)).sort(byName);
-export const localLevelsOf = (districtId) => localLevels.filter((l) => l.districtId === Number(districtId)).sort(byName);
+const byNameIn = (lang) => (a, b) => nameIn(a, lang).localeCompare(nameIn(b, lang), lang === 'ne' ? 'ne' : 'en');
+export const districtsOf = (provinceId, lang = 'en') => districts.filter((d) => d.provinceId === Number(provinceId)).sort(lang === 'ne' ? byNameIn('ne') : byName);
+export const localLevelsOf = (districtId, lang = 'en') => localLevels.filter((l) => l.districtId === Number(districtId)).sort(lang === 'ne' ? byNameIn('ne') : byName);
 export const wardsOf = (localId) => {
   const l = localById.get(Number(localId));
   return l ? Array.from({ length: l.wards }, (_, i) => i + 1) : [];
@@ -97,10 +107,24 @@ export function scopePatterns(scopes) {
   return scopes.flatMap((s) => [s, `${s}-%`]);
 }
 
-/** Human readable name. short: "Ward 5, Indrawati RM"; long adds district and province. */
-export function areaLabel(code, { short = false } = {}) {
+/**
+ * Human readable name. short: "Ward 5, Indrawati RM"; long adds district and province.
+ * lang 'ne': "वडा नं. ५, इन्द्रावती गाउँपालिका" / "..., सिन्धुपाल्चोक जिल्ला, बागमती प्रदेश".
+ */
+export function areaLabel(code, { short = false, lang = 'en' } = {}) {
   const a = parseArea(code);
   if (!a) return String(code ?? '');
+  if (lang === 'ne') {
+    switch (a.level) {
+      case 'nation': return 'सम्पूर्ण नेपाल';
+      case 'province': return a.province.nameNe;
+      case 'district': return short ? `${a.district.nameNe} जिल्ला` : `${a.district.nameNe} जिल्ला, ${a.province.nameNe}`;
+      case 'local': return short ? a.local.fullNameNe : `${a.local.fullNameNe}, ${a.district.nameNe} जिल्ला, ${a.province.nameNe}`;
+      default: return short
+        ? `वडा नं. ${toNepaliDigits(a.ward)}, ${a.local.fullNameNe}`
+        : `वडा नं. ${toNepaliDigits(a.ward)}, ${a.local.fullNameNe}, ${a.district.nameNe} जिल्ला, ${a.province.nameNe}`;
+    }
+  }
   switch (a.level) {
     case 'nation': return 'All of Nepal';
     case 'province': return a.province.name;

@@ -8,6 +8,7 @@ import { Button, Field, Input, Segmented, Select, cx } from '../components/ui.js
 import { passwordChecks, passwordProblems, isEmailFormat } from '../../../shared/accounts.js';
 import { NATION, isValidWard } from '../../../shared/areas.js';
 import { AreaPicker } from '../components/AreaPicker.jsx';
+import { t, tMsg, LanguageSwitcher } from '../i18n/index.jsx';
 
 const TABS = [
   { id: 'worker', icon: Footprints, blurb: 'Register households and record visits in the field, even with no signal.' },
@@ -50,7 +51,7 @@ function PasswordInput({ id, value, onChange, autoComplete }) {
   return (
     <div className="relative">
       <Input id={id} type={show ? 'text' : 'password'} value={value} onChange={onChange} autoComplete={autoComplete} required className="pr-11" />
-      <button type="button" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'}
+      <button type="button" onClick={() => setShow(!show)} aria-label={show ? t('Hide password') : t('Show password')}
         className="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 cursor-pointer place-items-center rounded text-ink-soft hover:text-ink">
         {show ? <EyeOff size={17} /> : <Eye size={17} />}
       </button>
@@ -88,8 +89,8 @@ function GoogleSignIn({ tab, signupRef, onError, onBusy, onPending }) {
           onError('');
           try {
             const r = await loginWithGoogle(credential, tabRef.current, signupRef.current?.());
-            if (r.pending) onPending(r.message); else navigate('/', { replace: true });
-          } catch (e) { onError(e.message); } finally { onBusy(false); }
+            if (r.pending) onPending(tMsg(r.message)); else navigate('/', { replace: true });
+          } catch (e) { onError(tMsg(e.message)); } finally { onBusy(false); }
         },
       });
       window.google.accounts.id.renderButton(holder.current, { theme: 'outline', size: 'large', text: 'continue_with', shape: 'rectangular', width: holder.current.offsetWidth || 360 });
@@ -99,16 +100,16 @@ function GoogleSignIn({ tab, signupRef, onError, onBusy, onPending }) {
     s.src = 'https://accounts.google.com/gsi/client';
     s.async = true;
     s.onload = render;
-    s.onerror = () => setNote('Google sign-in needs an internet connection.');
+    s.onerror = () => setNote(t('Google sign-in needs an internet connection.'));
     document.head.appendChild(s);
   }, [clientId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (clientId) return <div><div ref={holder} className="min-h-[44px] w-full" />{note && <p className="mt-2 text-[13px] text-ink-soft">{note}</p>}</div>;
   return (
     <div>
-      <button type="button" onClick={() => setNote('Google sign-in is not set up on this server yet (GOOGLE_CLIENT_ID is empty). Use your email and password.')}
+      <button type="button" onClick={() => setNote(t('Google sign-in is not set up on this server yet. Use your email and password.'))}
         className="flex h-11 w-full cursor-pointer items-center justify-center gap-2.5 rounded-md border border-line bg-white font-semibold text-ink hover:border-ink-soft">
-        <GoogleIcon /> Continue with Google
+        <GoogleIcon /> {t('Continue with Google')}
       </button>
       {note && <p className="mt-2 text-[13px] text-ink-soft" role="status">{note}</p>}
     </div>
@@ -130,7 +131,7 @@ function SignInForm({ tab, onError, error }) {
       await login(username, password, tab);
       navigate('/', { replace: true });
     } catch (err) {
-      onError(err.message);
+      onError(tMsg(err.message));
     } finally {
       setBusy(false);
     }
@@ -139,15 +140,15 @@ function SignInForm({ tab, onError, error }) {
   return (
     <>
       <form onSubmit={submit} className="mt-4 flex flex-col gap-4">
-        <Field label="Email or username">
+        <Field label={t('Email or username')}>
           <Input value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" autoCapitalize="none" inputMode="email" required />
         </Field>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="login-password" className="text-[13px] font-semibold text-ink-2">Password</label>
+          <label htmlFor="login-password" className="text-[13px] font-semibold text-ink-2">{t('Password')}</label>
           <PasswordInput id="login-password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
         </div>
         {error && <div role="alert" className="rounded-md bg-lali-wash px-3.5 py-2.5 text-sm text-lali-deep">{error}</div>}
-        <Button type="submit" disabled={busy} className="h-[46px]">{busy ? 'Signing in…' : 'Sign in'}</Button>
+        <Button type="submit" disabled={busy} className="h-[46px]">{busy ? t('Signing in…') : t('Sign in')}</Button>
       </form>
       <DemoAccounts tab={tab} onPick={(u, p) => { setUsername(u); setPassword(p); onError(''); }} />
     </>
@@ -157,13 +158,13 @@ function SignInForm({ tab, onError, error }) {
 function DemoAccounts({ tab, onPick }) {
   return (
     <div className="mt-7 border-t border-line pt-4">
-      <p className="text-sm text-ink-soft">Demo accounts with synthetic data. Tap one to fill the form.</p>
+      <p className="text-sm text-ink-soft">{t('Demo accounts with synthetic data. Tap one to fill the form.')}</p>
       <div className="mt-2.5 grid grid-cols-2 gap-2">
         {DEMO[tab].map((d) => (
           <button key={d.u} type="button" onClick={() => onPick(d.u, d.p)}
             className="cursor-pointer rounded-md border border-line bg-white px-3 py-2 text-left transition-colors hover:border-pine">
-            <b className="block text-sm">{d.who}</b>
-            <span className="text-xs text-ink-soft">{d.role}</span>
+            <b className="block text-sm">{t(d.who)}</b>
+            <span className="text-xs text-ink-soft">{t(d.role)}</span>
           </button>
         ))}
       </div>
@@ -182,25 +183,25 @@ function SignUpForm({ tab, signupRef, onPending, onError, error }) {
   const where = () => (needsWard ? { ward: f.ward } : { area: f.area || NATION });
   // Google sign-up on this screen uses the ward / area chosen here.
   signupRef.current = () => {
-    if (needsWard && !isValidWard(f.ward)) throw new Error('Choose your province, district, municipality and ward first.');
+    if (needsWard && !isValidWard(f.ward)) throw new Error(t('Choose your province, district, municipality and ward first.'));
     return where();
   };
 
   const submit = async (e) => {
     e.preventDefault();
     onError('');
-    if (f.fullName.trim().length < 2) return onError('Enter your full name.');
-    if (!isEmailFormat(f.email)) return onError('Enter a valid email address, for example name@gmail.com.');
+    if (f.fullName.trim().length < 2) return onError(t('Enter your full name.'));
+    if (!isEmailFormat(f.email)) return onError(t('Enter a valid email address, for example name@gmail.com.'));
     const problems = passwordProblems(f.password);
-    if (problems.length) return onError(problems[0]);
-    if (f.password !== f.confirm) return onError('The two passwords do not match.');
-    if (needsWard && !isValidWard(f.ward)) return onError('Choose your province, district, municipality and ward.');
+    if (problems.length) return onError(tMsg(problems[0]));
+    if (f.password !== f.confirm) return onError(t('The two passwords do not match.'));
+    if (needsWard && !isValidWard(f.ward)) return onError(t('Choose your province, district, municipality and ward.'));
     setBusy(true);
     try {
       const r = await register({ fullName: f.fullName.trim(), email: f.email.trim(), password: f.password, ...where() }, tab);
-      if (r.pending) onPending(r.message); else navigate('/', { replace: true });
+      if (r.pending) onPending(tMsg(r.message)); else navigate('/', { replace: true });
     } catch (err) {
-      onError(err.offline ? 'Creating an account needs an internet connection.' : err.message);
+      onError(err.offline ? t('Creating an account needs an internet connection.') : tMsg(err.message));
     } finally {
       setBusy(false);
     }
@@ -209,41 +210,41 @@ function SignUpForm({ tab, signupRef, onPending, onError, error }) {
 
   return (
     <form onSubmit={submit} className="mt-4 flex flex-col gap-4" noValidate>
-      <Field label="Full name">
+      <Field label={t('Full name')}>
         <Input value={f.fullName} onChange={set('fullName')} autoComplete="name" required />
       </Field>
-      <Field label="Email" note="Use a real address you can receive mail at. Fake or misspelled domains are rejected.">
+      <Field label={t('Email')} note={t('Use a real address you can receive mail at. Fake or misspelled domains are rejected.')}>
         <Input type="email" value={f.email} onChange={set('email')} autoComplete="email" autoCapitalize="none" inputMode="email" required />
       </Field>
       {needsWard ? (
         <fieldset className="rounded-lg border border-line p-3">
-          <legend className="px-1 text-[13px] font-semibold text-ink-2">{tab === 'patient' ? 'Where you live' : 'The ward you work in'}</legend>
+          <legend className="px-1 text-[13px] font-semibold text-ink-2">{tab === 'patient' ? t('Where you live') : t('The ward you work in')}</legend>
           <AreaPicker value={f.ward} onChange={(ward) => setF({ ...f, ward })} level="ward" compact />
         </fieldset>
       ) : (
         <fieldset className="rounded-lg border border-line p-3">
-          <legend className="px-1 text-[13px] font-semibold text-ink-2">The area you cover</legend>
+          <legend className="px-1 text-[13px] font-semibold text-ink-2">{t('The area you cover')}</legend>
           <AreaPicker value={f.area} onChange={(area) => setF({ ...f, area: area || NATION })} level="any" allowNation compact />
-          <p className="mt-2 text-xs text-ink-soft">Leave as "All of Nepal" or narrow it to a province, district or municipality.</p>
+          <p className="mt-2 text-xs text-ink-soft">{t('Leave as "All of Nepal" or narrow it to a province, district or municipality.')}</p>
         </fieldset>
       )}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="signup-password" className="text-[13px] font-semibold text-ink-2">Password</label>
+        <label htmlFor="signup-password" className="text-[13px] font-semibold text-ink-2">{t('Password')}</label>
         <PasswordInput id="signup-password" value={f.password} onChange={set('password')} autoComplete="new-password" />
-        <ul className="mt-1 grid grid-cols-1 gap-x-3 gap-y-0.5 text-[13px] sm:grid-cols-2" aria-label="Password rules">
+        <ul className="mt-1 grid grid-cols-1 gap-x-3 gap-y-0.5 text-[13px] sm:grid-cols-2" aria-label={t('Password rules')}>
           {checks.map((c) => (
             <li key={c.label} className={cx('flex items-center gap-1.5', c.ok ? 'text-pine' : 'text-ink-soft')}>
-              {c.ok ? <Check size={14} /> : <Circle size={10} className="mx-0.5" />} {c.label}
+              {c.ok ? <Check size={14} /> : <Circle size={10} className="mx-0.5" />} {t(c.label)}
             </li>
           ))}
         </ul>
       </div>
-      <Field label="Repeat password">
+      <Field label={t('Repeat password')}>
         <PasswordInput id="signup-confirm" value={f.confirm} onChange={set('confirm')} autoComplete="new-password" />
       </Field>
-      <p className="text-[13px] text-ink-soft">{SIGNUP_NOTE[tab]}</p>
+      <p className="text-[13px] text-ink-soft">{t(SIGNUP_NOTE[tab])}</p>
       {error && <div role="alert" className="rounded-md bg-lali-wash px-3.5 py-2.5 text-sm text-lali-deep">{error}</div>}
-      <Button type="submit" disabled={busy} className="h-[46px]">{busy ? 'Creating account…' : 'Create account'}</Button>
+      <Button type="submit" disabled={busy} className="h-[46px]">{busy ? t('Creating account…') : t('Create account')}</Button>
     </form>
   );
 }
@@ -267,7 +268,7 @@ export function Login() {
     setMode(m); setError(''); setNotice('');
     setParams(m === 'signup' ? { mode: 'signup' } : {}, { replace: true });
   };
-  const active = TABS.find((t) => t.id === tab) || TABS[0];
+  const active = TABS.find((tb) => tb.id === tab) || TABS[0];
 
   return (
     <div className="grid min-h-full md:grid-cols-[1.15fr_1fr]">
@@ -275,56 +276,56 @@ export function Login() {
         <Link to="/home" className="relative z-10 flex items-center gap-2.5 self-start text-white no-underline">
           <img src="/favicon.svg" alt="" className="size-[34px]" />
           <strong className="font-condensed text-[19px] font-semibold">RuralHealth Sync</strong>
-          <span className="ml-2 rounded-full border border-white/20 px-2.5 py-0.5 text-xs text-white/70 transition-colors hover:bg-white/10">About the project</span>
+          <span className="ml-2 rounded-full border border-white/20 px-2.5 py-0.5 text-xs text-white/70 transition-colors hover:bg-white/10">{t('About the project')}</span>
         </Link>
         <div className="relative z-10 mt-8 md:mt-[9vh]">
           <h1 className="max-w-[15ch] font-condensed text-[32px] leading-[1.05] font-semibold md:text-[48px]">
-            Health records that keep working when the signal doesn&apos;t.
+            {t("Health records that keep working when the signal doesn't.")}
           </h1>
           <p className="mt-4 hidden max-w-[44ch] text-[#b8c5d3] sm:block">
-            Volunteers record visits with no internet. Every reading is saved on the phone and syncs when
-            a connection appears, and two workers can never overwrite each other&apos;s measurements.
+            {t("Volunteers record visits with no internet. Every reading is saved on the phone and syncs when a connection appears, and two workers can never overwrite each other's measurements.")}
           </p>
         </div>
         <VillageScene />
       </div>
 
       <div className="mx-auto flex w-full max-w-[480px] animate-rise flex-col justify-center px-6 py-8 md:p-12">
-        <div className="mb-5">
-          <Segmented label="Sign in or create an account" value={mode} onChange={switchMode}
-            options={[{ value: 'signin', label: 'I have an account' }, { value: 'signup', label: 'I am new here' }]} />
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <Segmented label={t('Sign in or create an account')} value={mode} onChange={switchMode}
+            options={[{ value: 'signin', label: t('I have an account') }, { value: 'signup', label: t('I am new here') }]} />
+          <LanguageSwitcher />
         </div>
-        <h2 className="font-condensed text-[30px] font-semibold">{mode === 'signin' ? 'Sign in' : 'Create an account'}</h2>
+        <h2 className="font-condensed text-[30px] font-semibold">{mode === 'signin' ? t('Sign in') : t('Create an account')}</h2>
         <p className="mt-1 text-sm text-ink-soft">
-          {mode === 'signin' ? 'Welcome back. Sign in with your email or username.' : 'New to RuralHealth Sync? Choose who you are, then fill in your details.'}
+          {mode === 'signin' ? t('Welcome back. Sign in with your email or username.') : t('New to RuralHealth Sync? Choose who you are, then fill in your details.')}
         </p>
 
-        <div role="tablist" aria-label="I am a" className="mt-5 grid grid-cols-3 gap-1 rounded-[10px] bg-line-soft p-1">
-          {TABS.map((t) => (
-            <button key={t.id} role="tab" type="button" aria-selected={tab === t.id} onClick={() => chooseTab(t.id)}
+        <div role="tablist" aria-label={t('I am a')} className="mt-5 grid grid-cols-3 gap-1 rounded-[10px] bg-line-soft p-1">
+          {TABS.map((tb) => (
+            <button key={tb.id} role="tab" type="button" aria-selected={tab === tb.id} onClick={() => chooseTab(tb.id)}
               className={cx('flex cursor-pointer flex-col items-center gap-1 rounded-md px-2 py-2.5 text-[13px] font-semibold transition-colors',
-                tab === t.id ? 'bg-white text-ink shadow-sm' : 'text-ink-soft hover:text-ink')}>
-              <t.icon size={19} className={tab === t.id ? 'text-pine' : ''} />
-              {ROLE_TABS[t.id].label}
+                tab === tb.id ? 'bg-white text-ink shadow-sm' : 'text-ink-soft hover:text-ink')}>
+              <tb.icon size={19} className={tab === tb.id ? 'text-pine' : ''} />
+              {t(ROLE_TABS[tb.id].label)}
             </button>
           ))}
         </div>
-        <p className="mt-3 min-h-[44px] text-sm text-ink-soft">{active.blurb}</p>
+        <p className="mt-3 min-h-[44px] text-sm text-ink-soft">{t(active.blurb)}</p>
 
         {offline && (
           <div className="mt-2 flex items-start gap-2 rounded-md bg-marigold-wash px-3 py-2.5 text-sm text-marigold-deep">
             <WifiOff size={16} className="mt-0.5 flex-none" />
             {mode === 'signin'
-              ? 'You are offline. You can sign in with an account that has signed in on this phone before.'
-              : 'You are offline. Creating an account needs an internet connection.'}
+              ? t('You are offline. You can sign in with an account that has signed in on this phone before.')
+              : t('You are offline. Creating an account needs an internet connection.')}
           </div>
         )}
 
         {notice ? (
           <div role="status" className="mt-4 rounded-xl border border-pine/30 bg-pine-wash px-4 py-4 text-sm text-pine-deep">
-            <div className="flex items-center gap-2 font-semibold"><MailCheck size={18} /> Almost done</div>
+            <div className="flex items-center gap-2 font-semibold"><MailCheck size={18} /> {t('Almost done')}</div>
             <p className="mt-1.5">{notice}</p>
-            <Button variant="ghost" size="sm" className="mt-3" onClick={() => switchMode('signin')}>Back to sign in</Button>
+            <Button variant="ghost" size="sm" className="mt-3" onClick={() => switchMode('signin')}>{t('Back to sign in')}</Button>
           </div>
         ) : (
           <>
@@ -333,15 +334,15 @@ export function Login() {
               : <SignUpForm key={tab} tab={tab} signupRef={signupRef} error={error} onError={setError} onPending={setNotice} />}
 
             <div className="my-5 flex items-center gap-3 text-[13px] text-ink-soft">
-              <span className="h-px flex-1 bg-line" /> or <span className="h-px flex-1 bg-line" />
+              <span className="h-px flex-1 bg-line" /> {t('or')} <span className="h-px flex-1 bg-line" />
             </div>
             <GoogleSignIn tab={tab} signupRef={signupRef} onError={setError} onBusy={setBusy} onPending={setNotice} />
 
             <p className="mt-5 text-center text-sm text-ink-soft">
               {mode === 'signin' ? (
-                <>New here? <button type="button" onClick={() => switchMode('signup')} className="cursor-pointer font-semibold text-pine underline-offset-2 hover:underline">Create an account</button></>
+                <>{t('New here?')} <button type="button" onClick={() => switchMode('signup')} className="cursor-pointer font-semibold text-pine underline-offset-2 hover:underline">{t('Create an account')}</button></>
               ) : (
-                <>Already have an account? <button type="button" onClick={() => switchMode('signin')} className="cursor-pointer font-semibold text-pine underline-offset-2 hover:underline">Sign in</button></>
+                <>{t('Already have an account?')} <button type="button" onClick={() => switchMode('signin')} className="cursor-pointer font-semibold text-pine underline-offset-2 hover:underline">{t('Sign in')}</button></>
               )}
             </p>
           </>

@@ -10,6 +10,7 @@ import { useSync } from '../context/SyncContext.jsx';
 import { SignalRibbon } from './SignalRibbon.jsx';
 import { cx } from './ui.jsx';
 import { scopesLabel, relativeTime, nameParts } from '../utils/format.js';
+import { t, LanguageSwitcher } from '../i18n/index.jsx';
 
 const BARS = { real: 4, '3g': 3, '2g': 2, flaky: 1, offline: 0 };
 
@@ -18,15 +19,15 @@ function SyncChip() {
   const s = useSync();
   const navigate = useNavigate();
   let tone = 'ok';
-  let label = 'Synced';
-  if (s.state === 'syncing') { tone = 'sync'; label = 'Syncing'; }
-  else if (s.isOffline) { tone = 'off'; label = s.pending ? `Offline, ${s.pending} saved` : 'Offline'; }
-  else if (s.state === 'error' || s.state === 'auth') { tone = 'bad'; label = 'Sync problem'; }
-  else if (s.pending) { tone = 'off'; label = `${s.pending} to sync`; }
+  let label = t('Synced');
+  if (s.state === 'syncing') { tone = 'sync'; label = t('Syncing'); }
+  else if (s.isOffline) { tone = 'off'; label = s.pending ? t('Offline, {n} saved', { n: s.pending }) : t('Offline'); }
+  else if (s.state === 'error' || s.state === 'auth') { tone = 'bad'; label = t('Sync problem'); }
+  else if (s.pending) { tone = 'off'; label = t('{n} to sync', { n: s.pending }); }
   const bars = s.isOffline ? 0 : BARS[s.network] ?? 4;
   return (
     <button type="button" onClick={() => navigate('/sync')}
-      title={s.lastSyncAt ? `Last sync ${relativeTime(s.lastSyncAt)}` : 'Not synced yet'}
+      title={s.lastSyncAt ? t('Last sync {time}', { time: relativeTime(s.lastSyncAt) }) : t('Not synced yet')}
       className={cx(
         'inline-flex h-9 cursor-pointer items-center gap-2 rounded-full border px-3 text-[13px] font-semibold transition-all duration-300',
         tone === 'ok' && 'border-white/15 bg-white/10 text-mint hover:bg-white/15',
@@ -48,7 +49,7 @@ function SyncChip() {
 function ConflictBell() {
   const { openConflicts } = useSync();
   return (
-    <NavLink to="/conflicts" aria-label={`Conflicting readings: ${openConflicts}`}
+    <NavLink to="/conflicts" aria-label={t('Conflicting readings: {n}', { n: openConflicts })}
       className={({ isActive }) => cx('relative grid size-9 place-items-center rounded-full border transition-colors',
         isActive ? 'border-white bg-white text-ink' : 'border-white/15 bg-white/10 text-white hover:bg-white/20')}>
       <GitMerge size={17} />
@@ -87,16 +88,16 @@ function UserMenu() {
         <div role="menu" className="absolute top-12 right-0 z-50 w-64 origin-top-right animate-pop overflow-hidden rounded-2xl border border-line bg-white text-ink shadow-2xl">
           <div className="bg-brand px-4 py-3.5 text-white">
             <div className="font-semibold">{user.name}</div>
-            <div className="text-[13px] text-white/75">{ROLE_NAMES[user.role]}, {scopesLabel(user.wards)}</div>
+            <div className="text-[13px] text-white/75">{t(ROLE_NAMES[user.role])}, {scopesLabel(user.wards)}</div>
           </div>
           <Link to="/sync" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-4 py-3 text-sm text-ink no-underline hover:bg-paper">
-            <RefreshCw size={16} className="text-ink-soft" /> Sync status
+            <RefreshCw size={16} className="text-ink-soft" /> {t('Sync status')}
           </Link>
           <Link to="/home" role="menuitem" onClick={() => setOpen(false)} className="flex items-center gap-2.5 border-t border-line-soft px-4 py-3 text-sm text-ink no-underline hover:bg-paper">
-            <Info size={16} className="text-ink-soft" /> About the project
+            <Info size={16} className="text-ink-soft" /> {t('About the project')}
           </Link>
           <button type="button" role="menuitem" onClick={logout} className="flex w-full cursor-pointer items-center gap-2.5 border-t border-line-soft px-4 py-3 text-left text-sm text-lali-deep hover:bg-lali-wash">
-            <LogOut size={16} /> Sign out
+            <LogOut size={16} /> {t('Sign out')}
           </button>
         </div>
       )}
@@ -126,7 +127,7 @@ function NavLinks({ items, mobile }) {
   }, [measure]);
 
   return (
-    <nav ref={box} aria-label="Main"
+    <nav ref={box} aria-label={t('Main')}
       className={cx('relative flex items-center gap-1', mobile && 'scrollbar-none overflow-x-auto px-3 pb-2.5 lg:hidden', !mobile && 'hidden lg:flex')}>
       {pill && (
         <span aria-hidden className="absolute top-0 h-10 rounded-full bg-white/12 ring-1 ring-white/15 transition-all duration-300 ease-out"
@@ -140,7 +141,7 @@ function NavLinks({ items, mobile }) {
             'relative z-10 flex h-10 flex-none items-center gap-2 rounded-full px-3.5 text-sm font-semibold whitespace-nowrap no-underline transition-colors',
             isActive ? 'text-white' : 'text-white/65 hover:text-white',
           )}>
-          <n.icon size={17} /> {n.label}
+          <n.icon size={17} /> {t(n.label)}
         </NavLink>
       ))}
     </nav>
@@ -172,13 +173,14 @@ export function Layout() {
           <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-3 px-4 md:px-8">
             <Link to="/" className="mr-2 flex items-center gap-2.5 text-white no-underline lg:mr-6">
               <img src="/favicon.svg" alt="" className="size-9 rounded-xl ring-1 ring-white/20" />
-              <span className="leading-tight">
+              <span className="hidden leading-tight sm:block">
                 <strong className="block font-condensed text-[15px] font-semibold tracking-wide whitespace-nowrap sm:text-lg">RuralHealth Sync</strong>
-                <span className="hidden text-[11px] text-white/60 sm:block">Community health records</span>
+                <span className="hidden text-[11px] text-white/60 sm:block">{t('Community health records')}</span>
               </span>
             </Link>
             <NavLinks items={items} />
             <div className="ml-auto flex items-center gap-2">
+              <LanguageSwitcher tone="dark" />
               <SyncChip />
               {!patient && <ConflictBell />}
               <UserMenu />

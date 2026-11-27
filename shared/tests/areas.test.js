@@ -46,3 +46,16 @@ test('labels and legacy demo codes', () => {
   assert.equal(upgradeWard('ward-2'), DEMO_WARDS[1]);
   assert.ok(localLevelsOf(35).some((l) => l.name === 'Indrawati'));
 });
+
+test('every area has a Nepali name and Nepali labels read correctly', () => {
+  for (const l of localLevels) {
+    assert.ok(l.nameNe && /[ऀ-ॿ]/.test(l.nameNe) && !/[A-Za-z]/.test(l.nameNe), `local level ${l.id}`);
+    assert.ok(!/[‌‍]/.test(l.nameNe), `hidden joiner in ${l.id}`);
+  }
+  for (const p of provinces) assert.ok(p.nameNe.endsWith('प्रदेश'));
+  assert.equal(areaLabel(DEMO_WARDS[0], { lang: 'ne', short: true }), 'वडा नं. १, इन्द्रावती गाउँपालिका');
+  assert.equal(areaLabel(DEMO_WARDS[0], { lang: 'ne' }), 'वडा नं. १, इन्द्रावती गाउँपालिका, सिन्धुपाल्चोक जिल्ला, बागमती प्रदेश');
+  const ktm = localLevels.find((l) => l.name === 'Kathmandu' && l.type.short === 'MC');
+  assert.equal(ktm.fullNameNe, 'काठमाडौं महानगरपालिका');
+  assert.equal(areaLabel(NATION, { lang: 'ne' }), 'सम्पूर्ण नेपाल');
+});

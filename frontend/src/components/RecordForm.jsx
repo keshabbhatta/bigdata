@@ -8,6 +8,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import { Button, Drawer, Field, Input, Select, Textarea, cx } from './ui.jsx';
 import { wardFullName } from '../utils/format.js';
 import { AreaPicker } from './AreaPicker.jsx';
+import { t, tMsg } from '../i18n/index.jsx';
 import { isValidWard, inScope, upgradeWard } from '../../../shared/areas.js';
 
 const LONG_TEXT = new Set(['notes', 'findings', 'dangerSigns', 'outcome']);
@@ -66,7 +67,7 @@ export function RecordForm({ entity, title, fields, record, fixed = {}, wards = 
     e.preventDefault();
     setErrors([]);
     if (!record && (!isValidWard(ward) || (scopes.length && !inScope(ward, scopes)))) {
-      setErrors(['Choose the province, district, municipality and ward.']);
+      setErrors([t('Choose the province, district, municipality and ward.')]);
       return;
     }
     setBusy(true);
@@ -77,10 +78,10 @@ export function RecordForm({ entity, title, fields, record, fixed = {}, wards = 
       const saved = await saveRecord({ entity, id: record?.id, ward, op: record ? 'UPDATE' : 'CREATE', changes });
       if (afterSave) await afterSave(saved, changes, ward);
       sync.schedule(800);
-      toast(sync.isOffline ? 'Saved on this phone. It will sync when you are back online.' : 'Saved. Syncing now.', sync.isOffline ? 'pending' : 'ok');
+      toast(sync.isOffline ? t('Saved on this phone. It will sync when you are back online.') : t('Saved. Syncing now.'), sync.isOffline ? 'pending' : 'ok');
       onClose(saved);
     } catch (err) {
-      setErrors(err instanceof ValidationError ? err.problems : [err.message]);
+      setErrors((err instanceof ValidationError ? err.problems : [err.message]).map(tMsg));
     } finally {
       setBusy(false);
     }
@@ -93,8 +94,8 @@ export function RecordForm({ entity, title, fields, record, fixed = {}, wards = 
       onClose={() => onClose(null)}
       footer={(
         <>
-          <Button variant="ghost" type="button" onClick={() => onClose(null)}>Cancel</Button>
-          <Button type="submit" form={formId} disabled={busy}>{busy ? 'Saving…' : saveLabel || (record ? 'Save changes' : `Save ${def.label.toLowerCase()}`)}</Button>
+          <Button variant="ghost" type="button" onClick={() => onClose(null)}>{t('Cancel')}</Button>
+          <Button type="submit" form={formId} disabled={busy}>{busy ? t('Saving…') : saveLabel || (record ? t('Save changes') : t({ patient: 'Save patient', pregnancy: 'Save pregnancy', visit: 'Save visit' }[entity]))}</Button>
         </>
       )}
     >
@@ -110,7 +111,7 @@ export function RecordForm({ entity, title, fields, record, fixed = {}, wards = 
           </div>
         )}
         {!record && !choosesWard && ward && (
-          <p className="text-sm text-ink-soft sm:col-span-2">Ward: <b className="text-ink">{wardFullName(ward)}</b></p>
+          <p className="text-sm text-ink-soft sm:col-span-2">{t('Ward')}: <b className="text-ink">{wardFullName(ward)}</b></p>
         )}
         {fields.map((f) => {
           const spec = def.fields[f];
@@ -120,8 +121,8 @@ export function RecordForm({ entity, title, fields, record, fixed = {}, wards = 
           if (spec.type === 'enum') {
             control = (
               <Select {...common}>
-                {!spec.values.includes('') && <option value="">Choose…</option>}
-                {spec.values.map((v) => <option key={v} value={v}>{ENUM_LABELS[v] ?? v}</option>)}
+                {!spec.values.includes('') && <option value="">{t('Choose…')}</option>}
+                {spec.values.map((v) => <option key={v} value={v}>{ENUM_LABELS[v] ? t(ENUM_LABELS[v]) : v}</option>)}
               </Select>
             );
           } else if (LONG_TEXT.has(f)) {
@@ -134,7 +135,7 @@ export function RecordForm({ entity, title, fields, record, fixed = {}, wards = 
             control = <Input {...common} type={f === 'phone' ? 'tel' : 'text'} list={f === 'village' ? 'villages' : undefined} autoComplete="off" />;
           }
           return (
-            <Field key={f} label={`${spec.label}${spec.required ? ' *' : ''}`} clinical={isClinical(entity, f)} className={cx(full && 'sm:col-span-2')}>
+            <Field key={f} label={`${t(spec.label)}${spec.required ? ' *' : ''}`} clinical={isClinical(entity, f)} className={cx(full && 'sm:col-span-2')}>
               {control}
             </Field>
           );

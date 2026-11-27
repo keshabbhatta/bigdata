@@ -2,6 +2,7 @@
 // instead of repeating long class lists.
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { t, num } from '../i18n/index.jsx';
 
 export const cx = (...c) => c.filter(Boolean).join(' ');
 
@@ -55,7 +56,7 @@ export function Button({ variant = 'primary', size, className, as: As = 'button'
 /** White panel. Fades up when it appears; pass `i` to stagger several panels. */
 export function Panel({ className, children, i = 0 }) {
   return (
-    <section className={cx('reveal rounded-2xl border border-line bg-white shadow-[0_1px_2px_rgba(18,32,58,.04)]', className)} style={{ '--i': i }}>
+    <section className={cx('reveal min-w-0 rounded-2xl border border-line bg-white shadow-[0_1px_2px_rgba(18,32,58,.04)]', className)} style={{ '--i': i }}>
       {children}
     </section>
   );
@@ -107,7 +108,7 @@ export function Field({ label, note, clinical, className, children }) {
     <label className={cx('flex flex-col gap-1.5', className)}>
       <span className="flex items-center gap-2 text-[13px] font-semibold text-ink-2">
         {label}
-        {clinical && <span className="rounded-lg bg-lali-wash px-1.5 text-[11px] text-lali-deep">Clinical</span>}
+        {clinical && <span className="rounded-lg bg-lali-wash px-1.5 text-[11px] text-lali-deep">{t('Clinical')}</span>}
       </span>
       {children}
       {note && <span className="text-xs text-ink-soft">{note}</span>}
@@ -198,7 +199,7 @@ function Figure({ f, i }) {
   return (
     <div className={cx('reveal border-line-soft px-5 py-[18px]', i % 2 === 1 && 'border-l', i >= 2 && 'border-t lg:border-t-0', i === 2 && 'lg:border-l')} style={{ '--i': i + 1 }}>
       <div className="flex items-start justify-between gap-3">
-        <div className={cx('font-condensed text-[32px] leading-none font-semibold tracking-tight lg:text-[40px]', tone.num)}>{n ?? '–'}</div>
+        <div className={cx('font-condensed text-[32px] leading-none font-semibold tracking-tight lg:text-[40px]', tone.num)}>{n === null || n === undefined ? '–' : num(n)}</div>
         {f.icon && <span className={cx('grid size-9 place-items-center rounded-xl', tone.chip)}><f.icon size={18} /></span>}
       </div>
       <div className="mt-2 text-[13px] text-ink-soft">{f.label}</div>
@@ -229,7 +230,7 @@ export function Drawer({ title, onClose, children, footer }) {
         className="fixed inset-y-0 right-0 z-[51] flex w-full max-w-[560px] animate-slide-in flex-col bg-white shadow-2xl">
         <div className="flex items-center gap-3 border-b border-line px-5 py-4">
           <h2 className="font-condensed text-xl font-semibold">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close"
+          <button type="button" onClick={onClose} aria-label={t('Close')}
             className="ml-auto grid size-9 cursor-pointer place-items-center rounded-lg border border-line bg-white transition-colors hover:border-ink-soft">
             <X size={18} />
           </button>
@@ -265,7 +266,7 @@ export function WeeksBar({ weeks }) {
   const pct = Math.min(100, Math.max(0, ((weeks ?? 0) / 40) * 100));
   return (
     <div className="flex min-w-[150px] items-center gap-2.5">
-      <b className="min-w-[34px] font-condensed text-[15px]">{weeks ?? '–'}w</b>
+      <b className="min-w-[34px] font-condensed text-[15px]">{weeks === null || weeks === undefined ? '–' : t('{n}w', { n: weeks })}</b>
       <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-line-soft">
         <span className="grow-x absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-pine to-mint" style={{ width: `${pct}%` }} />
         <span className="absolute inset-y-0 left-[32.5%] w-0.5 bg-white" />

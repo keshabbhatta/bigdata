@@ -3,6 +3,7 @@ import { useConflicts } from '../hooks/useRecords.js';
 import { useAuth, isStaff } from '../context/AuthContext.jsx';
 import { ConflictCard } from '../components/ConflictCard.jsx';
 import { Empty, PageHead, Panel, Segmented } from '../components/ui.jsx';
+import { t } from '../i18n/index.jsx';
 
 export function Conflicts() {
   const { user } = useAuth();
@@ -12,20 +13,20 @@ export function Conflicts() {
   return (
     <>
       <PageHead
-        title="Conflicting readings"
+        title={t('Conflicting readings')}
         subtitle={isStaff(user)
-          ? 'Two health workers recorded different clinical values for the same patient while offline. Both readings are kept. Choose the correct one or enter a new measurement.'
-          : 'When two workers record different clinical values for the same patient while offline, both readings are kept here until a supervisor reviews them.'}
+          ? t('Two health workers recorded different clinical values for the same patient while offline. Both readings are kept. Choose the correct one or enter a new measurement.')
+          : t('When two workers record different clinical values for the same patient while offline, both readings are kept here until a supervisor reviews them.')}
       >
-        <Segmented label="Show" value={status} onChange={setStatus} options={[{ value: 'open', label: 'Needs review' }, { value: 'resolved', label: 'Resolved' }]} />
+        <Segmented label={t('Show')} value={status} onChange={setStatus} options={[{ value: 'open', label: t('Needs review') }, { value: 'resolved', label: t('Resolved') }]} />
       </PageHead>
 
       {conflicts && conflicts.length === 0 ? (
         <Panel>
-          <Empty title={status === 'open' ? 'No conflicting readings' : 'No resolved conflicts on this phone'}>
+          <Empty title={status === 'open' ? t('No conflicting readings') : t('No resolved conflicts on this phone')}>
             {status === 'open'
-              ? 'If two phones change the same blood pressure, hemoglobin or risk level while offline, it appears here after both sync.'
-              : 'Resolved conflicts appear here after the next sync.'}
+              ? t('If two phones change the same blood pressure, hemoglobin or risk level while offline, it appears here after both sync.')
+              : t('Resolved conflicts appear here after the next sync.')}
           </Empty>
         </Panel>
       ) : (
