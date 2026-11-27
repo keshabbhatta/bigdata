@@ -6,7 +6,7 @@ import morgan from 'morgan';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { config } from './config.js';
+import { config, describeDbUrl } from './config.js';
 import { api } from './routes/index.js';
 import { registry, httpMetrics } from './middleware/metrics.js';
 import { migrate } from './database/migrate.js';
@@ -104,6 +104,7 @@ app.use((err, req, res, _next) => {
 });
 
 async function start() {
+  console.log(`[startup] database: ${describeDbUrl(config.db.primaryUrl)}`);
   await loadDbPointer();
   // Wait for the database (it may still be starting inside Docker).
   for (let i = 1; ; i += 1) {
@@ -112,7 +113,11 @@ async function start() {
       break;
     } catch (e) {
       if (i >= 30) throw e;
-      console.log(`[startup] database not ready (${e.message}); retry ${i}/30`);
+      const why = e.message || e.code || e.errors?.map((x) => x.code).join(', ') || 'no answer';
+      console.log(`[startup] database ${describeDbUrl(config.db.primaryUrl)} not ready (${why}); retry ${i}/30`);
+      if (i === 1 && process.env.RENDER && /localhost|127\.0\.0\.1/.test(config.db.primaryUrl)) {
+        console.log('[startup] DATABASE_URL is missing or wrong: it must be the full postgresql://... link from Neon.');
+      }
       await new Promise((r) => setTimeout(r, 2000));
     }
   }
