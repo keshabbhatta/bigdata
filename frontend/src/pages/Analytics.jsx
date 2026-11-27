@@ -7,9 +7,10 @@ import { api } from '../services/api.js';
 import { useSync } from '../context/SyncContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Badge, Empty, Figures, PageHead, Panel, PanelHead, Select, Table } from '../components/ui.jsx';
-import { formatDateTime, relativeTime, wardName } from '../utils/format.js';
+import { formatDateTime, formatTime, relativeTime, wardName } from '../utils/format.js';
 import { AreaPicker } from '../components/AreaPicker.jsx';
 import { NATION, isValidWard } from '../../../shared/areas.js';
+import { t, num } from '../i18n/index.jsx';
 
 const C = { pine: '#0e6b5c', lali: '#c42847', marigold: '#e9a23b', sky: '#2f6fb0', ink: '#24364f', grid: '#e6ebf0', soft: '#5b6b7f' };
 const TYPE_COLORS = { ANC: C.lali, general: C.ink, immunization: C.sky, referral: C.marigold, PNC: C.pine };
@@ -38,21 +39,21 @@ export function Analytics() {
   const streamByMinute = (() => {
     const m = new Map();
     for (const r of data?.stream || []) {
-      const k = new Date(r.minute).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const k = formatTime(r.minute);
       if (!m.has(k)) m.set(k, { minute: k });
       m.get(k)[r.topic] = r.events;
     }
     return [...m.values()];
   })();
-  const t = data?.totals || {};
+  const tot = data?.totals || {};
   const rate = data?.followUp?.rate;
 
   return (
     <>
-      <PageHead title="Analytics" subtitle="Health activity across villages. Heavy numbers are computed by Spark jobs from the Kafka event stream, separately from the app's own database work.">
+      <PageHead title={t('Analytics')} subtitle={t("Health activity across villages. Heavy numbers are computed by Spark jobs from the Kafka event stream, separately from the app's own database work.")}>
         {!(user.wards.length === 1 && isValidWard(user.wards[0])) && (
           <div className="w-full rounded-xl border border-line bg-white p-3 md:w-[560px]">
-            <div className="mb-2 text-[13px] font-semibold text-ink-2">Show numbers for</div>
+            <div className="mb-2 text-[13px] font-semibold text-ink-2">{t('Show numbers for')}</div>
             <AreaPicker value={ward} onChange={setWard} level="any" within={user.role === 'admin' ? null : user.wards} allowNation />
           </div>
         )}
@@ -63,44 +64,44 @@ export function Analytics() {
           <span className="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1.5 text-[13px]">
             {data.source === 'spark' ? <Zap size={15} className="text-marigold-deep" /> : <Database size={15} className="text-sky" />}
             {data.source === 'spark'
-              ? <>Computed by the Spark batch job {relativeTime(data.computedAt)}</>
-              : <>Live database query. Run the Spark batch job to precompute these numbers.</>}
+              ? <>{t('Computed by the Spark batch job {time}', { time: relativeTime(data.computedAt) })}</>
+              : <>{t('Live database query. Run the Spark batch job to precompute these numbers.')}</>}
           </span>
-          {sync.isOffline && <Badge tone="marigold">Offline: showing results saved {relativeTime(data.cachedAt)}</Badge>}
+          {sync.isOffline && <Badge tone="marigold">{t('Offline: showing results saved {time}', { time: relativeTime(data.cachedAt) })}</Badge>}
         </div>
       )}
       {error && <p className="mb-4 text-sm text-lali-deep">{error}</p>}
 
       {!data ? (
-        <Panel><Empty title="Analytics need a connection">Connect once to load the numbers. They are then kept on this phone for offline viewing.</Empty></Panel>
+        <Panel><Empty title={t('Analytics need a connection')}>{t('Connect once to load the numbers. They are then kept on this phone for offline viewing.')}</Empty></Panel>
       ) : (
         <>
           <Figures items={[
-            { label: 'Registered patients', value: t.patients },
-            { label: 'Maternal health visits', value: t.maternalVisits, tone: 'good' },
-            { label: 'High-risk active pregnancies', value: t.highRisk, tone: 'alert' },
-            { label: 'Health workers active this week', value: t.activeWorkers },
+            { label: t('Registered patients'), value: tot.patients },
+            { label: t('Maternal health visits'), value: tot.maternalVisits, tone: 'good' },
+            { label: t('High-risk active pregnancies'), value: tot.highRisk, tone: 'alert' },
+            { label: t('Health workers active this week'), value: tot.activeWorkers },
           ]} />
 
           <div className="grid gap-5 lg:grid-cols-2">
             <Panel>
-              <PanelHead title="Visits per day" hint="Last 30 days" />
+              <PanelHead title={t('Visits per day')} hint={t('Last 30 days')} />
               <div className="h-[280px] px-2 py-4">
                 <ResponsiveContainer>
                   <BarChart data={data.dailyVisits} margin={{ left: -18, right: 8 }}>
                     <CartesianGrid stroke={C.grid} vertical={false} />
-                    <XAxis dataKey="day" tick={axis} tickFormatter={(d) => d.slice(8)} />
+                    <XAxis dataKey="day" tick={axis} tickFormatter={(d) => num(Number(d.slice(8)))} />
                     <YAxis tick={axis} allowDecimals={false} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    {types.map((k) => <Bar key={k} animationDuration={800} dataKey={k} stackId="v" fill={TYPE_COLORS[k] || C.soft} name={TYPE_NAMES[k] || k} />)}
+                    {types.map((k) => <Bar key={k} animationDuration={800} dataKey={k} stackId="v" fill={TYPE_COLORS[k] || C.soft} name={TYPE_NAMES[k] ? t(TYPE_NAMES[k]) : k} />)}
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </Panel>
 
             <Panel>
-              <PanelHead title="Villages" hint="Patients and active pregnancies" />
+              <PanelHead title={t('Villages')} hint={t('Patients and active pregnancies')} />
               <div className="h-[280px] px-2 py-4">
                 <ResponsiveContainer>
                   <BarChart data={data.villages} layout="vertical" margin={{ left: 12, right: 12 }}>
@@ -109,16 +110,16 @@ export function Analytics() {
                     <YAxis type="category" dataKey="village" tick={axis} width={80} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar animationDuration={800} dataKey="patients" fill={C.ink} name="Patients" />
-                    <Bar animationDuration={800} dataKey="pregnancies" fill={C.pine} name="Active pregnancies" />
-                    <Bar animationDuration={800} dataKey="highRisk" fill={C.lali} name="High risk" />
+                    <Bar animationDuration={800} dataKey="patients" fill={C.ink} name={t('Patients')} />
+                    <Bar animationDuration={800} dataKey="pregnancies" fill={C.pine} name={t('Active pregnancies')} />
+                    <Bar animationDuration={800} dataKey="highRisk" fill={C.lali} name={t('High risk')} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </Panel>
 
             <Panel>
-              <PanelHead title="New registrations per month" />
+              <PanelHead title={t('New registrations per month')} />
               <div className="h-[260px] px-2 py-4">
                 <ResponsiveContainer>
                   <LineChart data={data.monthlyRegistrations} margin={{ left: -18, right: 16 }}>
@@ -126,32 +127,32 @@ export function Analytics() {
                     <XAxis dataKey="month" tick={axis} />
                     <YAxis tick={axis} allowDecimals={false} />
                     <Tooltip />
-                    <Line animationDuration={900} type="monotone" dataKey="count" name="Registrations" stroke={C.pine} strokeWidth={2.5} dot={{ r: 3 }} />
+                    <Line animationDuration={900} type="monotone" dataKey="count" name={t('Registrations')} stroke={C.pine} strokeWidth={2.5} dot={{ r: 3 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </Panel>
 
             <Panel>
-              <PanelHead title="Follow-up visits completed" />
+              <PanelHead title={t('Follow-up visits completed')} />
               <div className="px-5 py-6">
-                <div className="font-condensed text-[56px] leading-none font-semibold text-pine">{rate == null ? '–' : `${Math.round(rate * 100)}%`}</div>
-                <p className="mt-2 text-ink-soft">{data.followUp.completed} of {data.followUp.due} follow-ups that were due have happened.</p>
+                <div className="font-condensed text-[56px] leading-none font-semibold text-pine">{rate == null ? '–' : `${num(Math.round(rate * 100))}%`}</div>
+                <p className="mt-2 text-ink-soft">{t('{done} of {due} follow-ups that were due have happened.', { done: data.followUp.completed, due: data.followUp.due })}</p>
                 <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-line-soft">
                   <div className="h-full rounded-full bg-pine transition-[width] duration-700" style={{ width: `${(rate || 0) * 100}%` }} />
                 </div>
                 <div className="mt-6 grid grid-cols-2 gap-4 border-t border-line-soft pt-4 text-sm">
-                  <div><b className="block font-condensed text-2xl">{t.visitsThisMonth}</b><span className="text-ink-soft">visits this month</span></div>
-                  <div><b className="block font-condensed text-2xl">{t.pendingSync}</b><span className="text-ink-soft">changes still on phones</span></div>
+                  <div><b className="block font-condensed text-2xl">{num(tot.visitsThisMonth)}</b><span className="text-ink-soft">{t('visits this month')}</span></div>
+                  <div><b className="block font-condensed text-2xl">{num(tot.pendingSync)}</b><span className="text-ink-soft">{t('changes still on phones')}</span></div>
                 </div>
               </div>
             </Panel>
           </div>
 
           <Panel className="mt-5">
-            <PanelHead title="Live event stream" hint="Kafka events per minute, counted by Spark Structured Streaming" />
+            <PanelHead title={t('Live event stream')} hint={t('Kafka events per minute, counted by Spark Structured Streaming')} />
             {streamByMinute.length === 0 ? (
-              <Empty title="No streaming data yet">Start Kafka and the Spark streaming job (see the README). Events then appear here within a minute.</Empty>
+              <Empty title={t('No streaming data yet')}>{t('Start Kafka and the Spark streaming job (see the README). Events then appear here within a minute.')}</Empty>
             ) : (
               <div className="h-[240px] px-2 py-4">
                 <ResponsiveContainer>
@@ -161,9 +162,9 @@ export function Analytics() {
                     <YAxis tick={axis} allowDecimals={false} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Line dataKey="patient-events" stroke={C.ink} strokeWidth={2} dot={false} name="Patients" />
-                    <Line dataKey="maternal-health-events" stroke={C.lali} strokeWidth={2} dot={false} name="Maternal" />
-                    <Line dataKey="clinic-visit-events" stroke={C.pine} strokeWidth={2} dot={false} name="Visits" />
+                    <Line dataKey="patient-events" stroke={C.ink} strokeWidth={2} dot={false} name={t('Patients')} />
+                    <Line dataKey="maternal-health-events" stroke={C.lali} strokeWidth={2} dot={false} name={t('Maternal')} />
+                    <Line dataKey="clinic-visit-events" stroke={C.pine} strokeWidth={2} dot={false} name={t('Visits')} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -172,13 +173,13 @@ export function Analytics() {
 
           {data.jobs?.length > 0 && (
             <Panel className="mt-5">
-              <PanelHead title="Spark job runs" />
-              <Table head={['Job', 'Finished', 'Duration', 'Rows read', 'Rows written']}>
+              <PanelHead title={t('Spark job runs')} />
+              <Table head={[t('Job'), t('Finished'), t('Duration'), t('Rows read'), t('Rows written')]}>
                 {data.jobs.map((j, i) => (
                   <tr key={i}>
-                    <td className="font-semibold">{j.job}</td>
+                    <td className="font-semibold">{t(j.job)}</td>
                     <td>{formatDateTime(j.finished_at)}</td>
-                    <td>{(j.duration_ms / 1000).toFixed(1)} s</td>
+                    <td>{t('{n} s', { n: (j.duration_ms / 1000).toFixed(1) })}</td>
                     <td>{j.rows_in}</td>
                     <td>{j.rows_out}</td>
                   </tr>

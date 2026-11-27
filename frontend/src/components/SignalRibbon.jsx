@@ -8,6 +8,7 @@ import { WifiOff, AlertTriangle, RefreshCw, KeyRound } from 'lucide-react';
 import { useSync } from '../context/SyncContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { cx } from './ui.jsx';
+import { t, tMsg } from '../i18n/index.jsx';
 
 export function SignalRibbon() {
   const s = useSync();
@@ -21,23 +22,22 @@ export function SignalRibbon() {
     return () => clearTimeout(t);
   }, [s.state]);
 
-  const changes = (n) => `${n} change${n === 1 ? '' : 's'}`;
   let view = null;
   if (s.state === 'syncing' && slowSync) {
-    view = { tone: 'sync', Icon: RefreshCw, msg: <><b>Syncing.</b> {s.progress || 'Talking to the server'}…</> };
+    view = { tone: 'sync', Icon: RefreshCw, msg: <><b>{t('Syncing.')}</b> {s.progress ? tMsg(s.progress) : t('Talking to the server')}…</> };
   } else if (s.isOffline && s.state !== 'syncing') {
     view = {
       tone: 'off', Icon: WifiOff,
       msg: s.pending
-        ? <><b>Offline.</b> {changes(s.pending)} saved on this phone. They sync by themselves when the signal returns.</>
-        : <><b>Offline.</b> Keep working. Everything you enter is saved on this phone.</>,
+        ? <><b>{t('Offline.')}</b> {s.pending === 1 ? t('1 change saved on this phone. It syncs by itself when the signal returns.') : t('{n} changes saved on this phone. They sync by themselves when the signal returns.', { n: s.pending })}</>
+        : <><b>{t('Offline.')}</b> {t('Keep working. Everything you enter is saved on this phone.')}</>,
     };
   } else if (s.state === 'auth') {
-    view = { tone: 'bad', Icon: KeyRound, msg: <><b>Session expired.</b> Sign in again to sync. Your changes are safe on this phone.</>,
-      action: { label: 'Sign in', run: () => { logout(); navigate('/login'); } } };
+    view = { tone: 'bad', Icon: KeyRound, msg: <><b>{t('Session expired.')}</b> {t('Sign in again to sync. Your changes are safe on this phone.')}</>,
+      action: { label: t('Sign in'), run: () => { logout(); navigate('/login'); } } };
   } else if (s.state === 'error') {
-    view = { tone: 'bad', Icon: AlertTriangle, msg: <><b>Sync failed.</b> {s.lastError} Your changes are safe on this phone.</>,
-      action: { label: 'Try again', run: s.syncNow } };
+    view = { tone: 'bad', Icon: AlertTriangle, msg: <><b>{t('Sync failed.')}</b> {tMsg(s.lastError)} {t('Your changes are safe on this phone.')}</>,
+      action: { label: t('Try again'), run: s.syncNow } };
   }
   if (!view) return null;
 

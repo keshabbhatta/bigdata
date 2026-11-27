@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Button, cx } from '../components/ui.jsx';
+import { t, num, LanguageSwitcher } from '../i18n/index.jsx';
 
 /* ---------------------------------------------------------------- helpers */
 
@@ -68,23 +69,23 @@ function PhoneMockup() {
       <div className="rounded-[2.6rem] border-[10px] border-[#0b1424] bg-[#0b1424] shadow-[0_40px_80px_-20px_rgba(0,0,0,.6)] ring-1 ring-white/10">
         <div className="overflow-hidden rounded-[2rem] bg-paper text-ink">
           <div className="flex items-center justify-between bg-brand px-5 pt-3 pb-2 text-[10px] text-white/80">
-            <span>9:41</span><span className="h-4 w-16 rounded-full bg-black/40" /><span>{phase === 0 ? 'No signal' : '2G'}</span>
+            <span>9:41</span><span className="h-4 w-16 rounded-full bg-black/40" /><span>{phase === 0 ? t('No signal') : '2G'}</span>
           </div>
           <div className="bg-brand px-4 pb-3 text-white">
-            <div className="font-condensed text-[15px] font-semibold">Good morning, Sita</div>
-            <div className="text-[11px] text-white/70">Ward 1, Simle</div>
+            <div className="font-condensed text-[15px] font-semibold">{t('Good morning, Sita')}</div>
+            <div className="text-[11px] text-white/70">{t('Ward 1, Simle')}</div>
           </div>
           <div className={cx('flex h-8 items-center gap-2 px-3 text-[11px] font-semibold transition-colors duration-500',
             st.tone === 'off' && 'bg-marigold-wash text-marigold-deep', st.tone === 'sync' && 'stripes animate-flow text-white',
             st.tone === 'ok' && 'bg-pine-wash text-pine-deep')}>
             {st.tone === 'off' ? <WifiOff size={13} /> : st.tone === 'sync' ? <RefreshCw size={13} className="animate-spin" /> : <CheckCircle2 size={13} />}
-            {st.ribbon}
+            {t(st.ribbon)}
           </div>
           <div className="grid grid-cols-2 gap-2 p-3">
             {[['30', 'Patients'], ['6', 'Pregnancies']].map(([n, l]) => (
               <div key={l} className="rounded-xl bg-white p-2.5 shadow-sm">
-                <div className="font-condensed text-xl font-semibold">{n}</div>
-                <div className="text-[10px] text-ink-soft">{l}</div>
+                <div className="font-condensed text-xl font-semibold">{num(n)}</div>
+                <div className="text-[10px] text-ink-soft">{t(l)}</div>
               </div>
             ))}
           </div>
@@ -95,13 +96,13 @@ function PhoneMockup() {
                   {r.name.split(' ').map((p) => p[0]).join('')}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[11px] font-semibold">{r.name}</div>
-                  <div className="truncate text-[10px] text-ink-soft">{r.what}</div>
+                  <div className="truncate text-[11px] font-semibold">{t(r.name)}</div>
+                  <div className="truncate text-[10px] text-ink-soft">{t(r.what)}</div>
                 </div>
                 <span className={cx('rounded-full px-1.5 py-0.5 text-[9px] font-bold transition-all duration-500',
                   phase === 2 ? 'bg-pine-wash text-pine-deep' : 'bg-marigold-wash text-marigold-deep')}
                   style={{ transitionDelay: `${i * 180}ms` }}>
-                  {phase === 2 ? 'Synced' : 'On phone'}
+                  {phase === 2 ? t('Synced') : t('On phone')}
                 </span>
               </div>
             ))}
@@ -114,14 +115,14 @@ function PhoneMockup() {
 
       {/* floating cards around the phone */}
       <div className="absolute top-[150px] -left-36 hidden w-48 animate-float rounded-2xl bg-white p-3 text-ink shadow-2xl sm:block [animation-delay:-2s]">
-        <div className="flex items-center gap-1.5 text-[11px] font-bold text-lali-deep"><GitMerge size={13} /> Two readings kept</div>
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-lali-deep"><GitMerge size={13} /> {t('Two readings kept')}</div>
         <div className="mt-1.5 flex gap-1.5 font-condensed text-lg font-semibold">
           <span className="rounded-lg bg-paper px-2">120/80</span><span className="rounded-lg bg-paper px-2">140/90</span>
         </div>
-        <div className="mt-1 text-[10px] text-ink-soft">A doctor chooses. Nothing is overwritten.</div>
+        <div className="mt-1 text-[10px] text-ink-soft">{t('A doctor chooses. Nothing is overwritten.')}</div>
       </div>
       <div className="absolute -right-24 bottom-16 hidden animate-float rounded-2xl bg-white px-3 py-2.5 text-ink shadow-2xl sm:block [animation-delay:-4s]">
-        <div className="text-[10px] text-ink-soft">Sync batch, gzip</div>
+        <div className="text-[10px] text-ink-soft">{t('Sync batch, gzip')}</div>
         <div className="font-condensed text-lg font-semibold text-pine">24 KB → 4 KB</div>
       </div>
     </div>
@@ -138,14 +139,14 @@ function ConflictDemo() {
   return (
     <div ref={ref} className="relative h-[330px] w-full">
       <div className={cx(card, p >= 1 ? 'left-[5%] translate-y-2 rotate-0' : 'left-0 -rotate-3')}>
-        <div className="flex items-center gap-2 text-xs text-ink-soft"><Smartphone size={14} /> Sita&apos;s phone, offline</div>
+        <div className="flex items-center gap-2 text-xs text-ink-soft"><Smartphone size={14} /> {t("Sita's phone, offline")}</div>
         <div className="mt-2 font-condensed text-3xl font-semibold">120/80</div>
-        <div className="text-xs text-ink-soft">Blood pressure, 10:12</div>
+        <div className="text-xs text-ink-soft">{t('Blood pressure, 10:12')}</div>
       </div>
       <div className={cx(card, p >= 1 ? 'right-[5%] translate-y-2 rotate-0' : 'right-0 rotate-3')}>
-        <div className="flex items-center gap-2 text-xs text-ink-soft"><Smartphone size={14} /> Gita&apos;s phone, offline</div>
+        <div className="flex items-center gap-2 text-xs text-ink-soft"><Smartphone size={14} /> {t("Gita's phone, offline")}</div>
         <div className="mt-2 font-condensed text-3xl font-semibold">140/90</div>
-        <div className="text-xs text-ink-soft">Blood pressure, 10:40</div>
+        <div className="text-xs text-ink-soft">{t('Blood pressure, 10:40')}</div>
       </div>
       <svg className="absolute top-[118px] left-1/2 h-16 w-[60%] -translate-x-1/2" viewBox="0 0 300 60" fill="none" aria-hidden>
         <path d="M20 0 C20 40 150 20 150 58 M280 0 C280 40 150 20 150 58" stroke="#5fe0c0" strokeWidth="2.5" strokeDasharray="6 8"
@@ -156,13 +157,13 @@ function ConflictDemo() {
         p === 3 ? 'border-pine' : 'border-lali')}>
         {p === 3 ? (
           <>
-            <div className="flex items-center gap-2 text-sm font-bold text-pine-deep"><CheckCircle2 size={16} /> Resolved by Dr. Sharma</div>
-            <div className="mt-1 text-sm text-ink-2">Kept 140/90 after re-checking at the health post. Every phone receives the decision.</div>
+            <div className="flex items-center gap-2 text-sm font-bold text-pine-deep"><CheckCircle2 size={16} /> {t('Resolved by Dr. Sharma')}</div>
+            <div className="mt-1 text-sm text-ink-2">{t('Kept 140/90 after re-checking at the health post. Every phone receives the decision.')}</div>
           </>
         ) : (
           <>
-            <div className="flex items-center gap-2 text-sm font-bold text-lali-deep"><GitMerge size={16} /> Conflicting readings, both kept</div>
-            <div className="mt-1 text-sm text-ink-2">A blood pressure value is clinical, so the server never picks one silently. It waits for a doctor.</div>
+            <div className="flex items-center gap-2 text-sm font-bold text-lali-deep"><GitMerge size={16} /> {t('Conflicting readings, both kept')}</div>
+            <div className="mt-1 text-sm text-ink-2">{t('A blood pressure value is clinical, so the server never picks one silently. It waits for a doctor.')}</div>
           </>
         )}
       </div>
@@ -176,13 +177,13 @@ function Pipeline() {
   const node = (x, y, w, label, sub, color) => (
     <g transform={`translate(${x} ${y})`}>
       <rect width={w} height="58" rx="14" fill="#fff" stroke={color} strokeWidth="2" />
-      <text x={w / 2} y="26" textAnchor="middle" fontSize="15" fontWeight="600" fill="#12203a" fontFamily="IBM Plex Sans, sans-serif">{label}</text>
-      <text x={w / 2} y="44" textAnchor="middle" fontSize="11.5" fill="#5a6b80" fontFamily="IBM Plex Sans, sans-serif">{sub}</text>
+      <text x={w / 2} y="26" textAnchor="middle" fontSize="15" fontWeight="600" fill="#12203a" fontFamily="IBM Plex Sans, IBM Plex Sans Devanagari, sans-serif">{t(label)}</text>
+      <text x={w / 2} y="44" textAnchor="middle" fontSize="11.5" fill="#5a6b80" fontFamily="IBM Plex Sans, IBM Plex Sans Devanagari, sans-serif">{t(sub)}</text>
     </g>
   );
   const flow = (d, color = '#0d7a68') => <path d={d} fill="none" stroke={color} strokeWidth="2.5" strokeDasharray="6 8" className="animate-dash" markerEnd="url(#arrow)" />;
   return (
-    <svg viewBox="0 0 980 360" className="h-auto w-full min-w-[720px]" role="img" aria-label="Data flow: phones to load balancer, two API servers coordinated by etcd, PostgreSQL primary and replica, outbox to Kafka, Spark streaming and batch, analytics dashboard.">
+    <svg viewBox="0 0 980 360" className="h-auto w-full min-w-[720px]" role="img" aria-label={t('Data flow: phones to load balancer, two API servers coordinated by etcd, PostgreSQL primary and replica, outbox to Kafka, Spark streaming and batch, analytics dashboard.')}>
       <defs>
         <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
           <path d="M0 0 L10 5 L0 10z" fill="#0d7a68" />
@@ -268,7 +269,7 @@ export function Home() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const cta = session ? { to: '/', label: 'Open the app' } : { to: '/login', label: 'Try the live demo' };
+  const cta = session ? { to: '/', label: t('Open the app') } : { to: '/login', label: t('Try the live demo') };
 
   return (
     <div className="min-h-full scroll-smooth bg-white">
@@ -280,14 +281,15 @@ export function Home() {
             <img src="/favicon.svg" alt="" className="size-9 rounded-xl ring-1 ring-white/20" />
             <strong className="font-condensed text-lg font-semibold">RuralHealth Sync</strong>
           </Link>
-          <nav className="hidden items-center gap-1 text-sm font-semibold md:flex" aria-label="Sections">
+          <nav className="hidden items-center gap-1 text-sm font-semibold md:flex" aria-label={t('Sections')}>
             {[['#problem', 'The problem'], ['#how', 'How it works'], ['#roles', 'Who uses it'], ['#tech', 'Technology']].map(([href, l]) => (
-              <a key={href} href={href} className="rounded-full px-3.5 py-2 text-white/75 no-underline transition-colors hover:bg-white/10 hover:text-white">{l}</a>
+              <a key={href} href={href} className="rounded-full px-3.5 py-2 text-white/75 no-underline transition-colors hover:bg-white/10 hover:text-white">{t(l)}</a>
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
-            {!session && <Button as={Link} to="/login?mode=signup" variant="glass" size="sm" className="h-9 px-4">Create account</Button>}
-            <Button as={Link} to={cta.to} variant="accent" size="sm" className="h-9 px-4">{session ? 'Open the app' : 'Sign in'}</Button>
+            <LanguageSwitcher tone="dark" />
+            {!session && <Button as={Link} to="/login?mode=signup" variant="glass" size="sm" className="hidden h-9 px-4 sm:inline-flex">{t('Create account')}</Button>}
+            <Button as={Link} to={cta.to} variant="accent" size="sm" className="h-9 px-4">{session ? t('Open the app') : t('Sign in')}</Button>
           </div>
         </div>
       </header>
@@ -313,28 +315,26 @@ export function Home() {
           <div>
             <Reveal>
               <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[13px] text-white/85 backdrop-blur">
-                <Signal size={14} className="text-mint" /> Local-first health records for rural South Asia
+                <Signal size={14} className="text-mint" /> {t('Local-first health records for rural South Asia')}
               </span>
             </Reveal>
             <Reveal delay={100}>
               <h1 className="mt-5 max-w-[16ch] font-condensed text-[42px] leading-[1.02] font-semibold tracking-tight md:text-[64px]">
-                Every reading saved, even where the signal never reaches.
+                {t('Every reading saved, even where the signal never reaches.')}
               </h1>
             </Reveal>
             <Reveal delay={200}>
               <p className="mt-5 max-w-[52ch] text-lg text-white/80">
-                RuralHealth Sync lets community health volunteers record mothers, pregnancies and visits with no
-                internet, then synchronizes safely when a connection appears. When two workers disagree, both
-                readings are kept for a doctor. Nothing is silently overwritten.
+                {t('RuralHealth Sync lets community health volunteers record mothers, pregnancies and visits with no internet, then synchronizes safely when a connection appears. When two workers disagree, both readings are kept for a doctor. Nothing is silently overwritten.')}
               </p>
             </Reveal>
             <Reveal delay={300} className="mt-8 flex flex-wrap gap-3">
               <Button as={Link} to={cta.to} variant="accent" className="h-12 px-6 text-base">{cta.label}</Button>
-              <Button as="a" href="#how" variant="glass" className="h-12 px-6 text-base"><ArrowDown size={18} /> How it works</Button>
+              <Button as="a" href="#how" variant="glass" className="h-12 px-6 text-base"><ArrowDown size={18} /> {t('How it works')}</Button>
             </Reveal>
             <Reveal delay={400} className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-white/75">
-              {['Works fully offline', 'Syncs on weak 2G', 'Installs like an app'].map((t) => (
-                <span key={t} className="flex items-center gap-2"><CheckCircle2 size={17} className="text-mint" /> {t}</span>
+              {['Works fully offline', 'Syncs on weak 2G', 'Installs like an app'].map((txt) => (
+                <span key={txt} className="flex items-center gap-2"><CheckCircle2 size={17} className="text-mint" /> {t(txt)}</span>
               ))}
             </Reveal>
           </div>
@@ -346,23 +346,21 @@ export function Home() {
       <section id="problem" className="scroll-mt-20 bg-white py-20 md:py-28">
         <div className="mx-auto max-w-[1200px] px-5 md:px-8">
           <Reveal className="max-w-[720px]">
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">Built for places the network forgets</h2>
+            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('Built for places the network forgets')}</h2>
             <p className="mt-4 text-lg text-ink-soft">
-              Female Community Health Volunteers in rural Nepal, Lady Health Workers in Pakistan and rural clinic staff in
-              Bangladesh and Sri Lanka keep maternal and community health running in hill villages, often with no
-              reliable connection.
+              {t('Female Community Health Volunteers in rural Nepal, Lady Health Workers in Pakistan and rural clinic staff in Bangladesh and Sri Lanka keep maternal and community health running in hill villages, often with no reliable connection.')}
             </p>
           </Reveal>
           <div className="mt-12 grid gap-5 md:grid-cols-3">
             {PROBLEMS.map((p, i) => (
               <Reveal key={p.title} delay={i * 120}>
-                <Link to={`/problems/${p.slug}`} aria-label={`${p.title}: read the full explanation`}
+                <Link to={`/problems/${p.slug}`} aria-label={`${t(p.title)}: ${t('read the full explanation')}`}
                   className="group flex h-full flex-col rounded-3xl border border-line bg-paper p-7 text-ink no-underline transition-all duration-300 hover:-translate-y-1 hover:border-pine/30 hover:bg-white hover:shadow-xl focus-visible:-translate-y-1">
                   <span className="grid size-12 place-items-center rounded-2xl bg-white text-lali shadow-sm transition-transform duration-300 group-hover:scale-110"><p.icon size={22} /></span>
-                  <h3 className="mt-5 text-xl font-semibold">{p.title}</h3>
-                  <p className="mt-2 flex-1 text-ink-soft">{p.text}</p>
+                  <h3 className="mt-5 text-xl font-semibold">{t(p.title)}</h3>
+                  <p className="mt-2 flex-1 text-ink-soft">{t(p.text)}</p>
                   <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-pine">
-                    Read the full explanation <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                    {t('Read the full explanation')} <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
                   </span>
                 </Link>
               </Reveal>
@@ -375,8 +373,8 @@ export function Home() {
       <section id="how" className="relative scroll-mt-20 overflow-hidden bg-paper py-20 md:py-28">
         <div className="mx-auto max-w-[1200px] px-5 md:px-8">
           <Reveal className="mx-auto max-w-[720px] text-center">
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">How a visit travels from the village to the clinic</h2>
-            <p className="mt-4 text-lg text-ink-soft">Local first: the phone is the source of truth while offline, and the server merges everyone’s work when they reconnect.</p>
+            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('How a visit travels from the village to the clinic')}</h2>
+            <p className="mt-4 text-lg text-ink-soft">{t('Local first: the phone is the source of truth while offline, and the server merges everyone’s work when they reconnect.')}</p>
           </Reveal>
           <div ref={stepsRef} className="relative mt-16 grid gap-10 md:grid-cols-4 md:gap-6">
             <div aria-hidden className="absolute top-8 right-[12%] left-[12%] hidden h-1 overflow-hidden rounded-full bg-line md:block">
@@ -389,8 +387,8 @@ export function Home() {
                   <s.icon size={26} />
                   <span className="absolute -top-2 -right-2 grid size-7 place-items-center rounded-full bg-ink text-xs font-bold text-white">{i + 1}</span>
                 </div>
-                <h3 className="mt-5 text-lg font-semibold">{s.title}</h3>
-                <p className="mx-auto mt-2 max-w-[30ch] text-[15px] text-ink-soft">{s.text}</p>
+                <h3 className="mt-5 text-lg font-semibold">{t(s.title)}</h3>
+                <p className="mx-auto mt-2 max-w-[30ch] text-[15px] text-ink-soft">{t(s.text)}</p>
               </div>
             ))}
           </div>
@@ -402,14 +400,13 @@ export function Home() {
         <span aria-hidden className="absolute -bottom-40 -left-20 size-[420px] animate-aurora rounded-full bg-mint/15 blur-3xl" />
         <div className="relative mx-auto grid max-w-[1200px] items-center gap-14 px-5 md:px-8 lg:grid-cols-2">
           <Reveal>
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">Two readings. Nothing lost.</h2>
+            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('Two readings. Nothing lost.')}</h2>
             <p className="mt-4 text-lg text-white/80">
-              Sita and Gita both visit the same mother while offline and record different blood pressures. A naive app keeps
-              whichever phone syncs last. RuralHealth Sync notices that neither worker saw the other’s reading and keeps both.
+              {t('Sita and Gita both visit the same mother while offline and record different blood pressures. A naive app keeps whichever phone syncs last. RuralHealth Sync notices that neither worker saw the other’s reading and keeps both.')}
             </p>
             <ul className="mt-6 space-y-3 text-white/85">
-              {['Version vectors tell concurrent edits apart from corrections', 'Clinical fields are never chosen automatically', 'Phone numbers and notes settle by hybrid logical clock, the same on every device', 'Every decision is recorded in an audit log'].map((t) => (
-                <li key={t} className="flex gap-3"><CheckCircle2 size={20} className="mt-0.5 flex-none text-mint" /> {t}</li>
+              {['Version vectors tell concurrent edits apart from corrections', 'Clinical fields are never chosen automatically', 'Phone numbers and notes settle by hybrid logical clock, the same on every device', 'Every decision is recorded in an audit log'].map((txt) => (
+                <li key={txt} className="flex gap-3"><CheckCircle2 size={20} className="mt-0.5 flex-none text-mint" /> {t(txt)}</li>
               ))}
             </ul>
           </Reveal>
@@ -421,17 +418,17 @@ export function Home() {
       <section id="roles" className="scroll-mt-20 bg-white py-20 md:py-28">
         <div className="mx-auto max-w-[1200px] px-5 md:px-8">
           <Reveal className="max-w-[720px]">
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">One record, four kinds of users</h2>
-            <p className="mt-4 text-lg text-ink-soft">Each person sees what they need. Volunteers only see their own ward, and patients only their own record.</p>
+            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('One record, four kinds of users')}</h2>
+            <p className="mt-4 text-lg text-ink-soft">{t('Each person sees what they need. Volunteers only see their own ward, and patients only their own record.')}</p>
           </Reveal>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {ROLES.map((r, i) => (
               <Reveal key={r.title} delay={i * 100}>
                 <div className="group h-full rounded-3xl border border-line p-6 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl">
                   <span className={cx('grid size-12 place-items-center rounded-2xl transition-transform duration-300 group-hover:rotate-[-6deg] group-hover:scale-110', r.color)}><r.icon size={22} /></span>
-                  <h3 className="mt-5 text-lg font-semibold">{r.title}</h3>
+                  <h3 className="mt-5 text-lg font-semibold">{t(r.title)}</h3>
                   <ul className="mt-3 space-y-2 text-[15px] text-ink-soft">
-                    {r.points.map((p) => <li key={p} className="flex gap-2"><span className="mt-2 size-1.5 flex-none rounded-full bg-pine" />{p}</li>)}
+                    {r.points.map((p) => <li key={p} className="flex gap-2"><span className="mt-2 size-1.5 flex-none rounded-full bg-pine" />{t(p)}</li>)}
                   </ul>
                 </div>
               </Reveal>
@@ -444,21 +441,20 @@ export function Home() {
       <section id="tech" className="scroll-mt-20 bg-paper py-20 md:py-28">
         <div className="mx-auto max-w-[1200px] px-5 md:px-8">
           <Reveal className="max-w-[760px]">
-            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">A small distributed big data system</h2>
+            <h2 className="font-condensed text-[34px] leading-tight font-semibold tracking-tight md:text-[44px]">{t('A small distributed big data system')}</h2>
             <p className="mt-4 text-lg text-ink-soft">
-              Built on the ideas of <i>Designing Data-Intensive Applications</i>: replication, partitioning, transactions,
-              consensus, and batch and stream processing, each with a concrete job in the system.
+              {t('Built on the ideas of Designing Data-Intensive Applications: replication, partitioning, transactions, consensus, and batch and stream processing, each with a concrete job in the system.')}
             </p>
           </Reveal>
           <Reveal delay={100} className="mt-10 overflow-x-auto rounded-3xl border border-line bg-white p-5 shadow-sm md:p-8">
             <Pipeline />
           </Reveal>
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {CHAPTERS.map(([n, t, d], i) => (
+            {CHAPTERS.map(([n, title, d], i) => (
               <Reveal key={n} delay={i * 60}>
                 <div className="flex h-full items-center gap-4 rounded-2xl border border-line bg-white px-4 py-3.5 transition-colors hover:border-pine/40">
-                  <span className="grid size-11 flex-none place-items-center rounded-xl bg-ink font-condensed text-lg font-semibold text-white">{n}</span>
-                  <div><div className="font-semibold">{t}</div><div className="text-sm text-ink-soft">{d}</div></div>
+                  <span className="grid size-11 flex-none place-items-center rounded-xl bg-ink font-condensed text-lg font-semibold text-white">{num(n)}</span>
+                  <div><div className="font-semibold">{t(title)}</div><div className="text-sm text-ink-soft">{t(d)}</div></div>
                 </div>
               </Reveal>
             ))}
@@ -478,14 +474,13 @@ export function Home() {
         <Reveal className="relative mx-5 overflow-hidden rounded-[2rem] bg-brand px-6 py-14 text-center text-white md:mx-auto md:max-w-[1100px] md:px-16">
           <span aria-hidden className="absolute -top-20 left-1/3 size-80 animate-aurora rounded-full bg-marigold/20 blur-3xl" />
           <div className="relative">
-            <h2 className="font-condensed text-[32px] leading-tight font-semibold md:text-[44px]">See it working</h2>
+            <h2 className="font-condensed text-[32px] leading-tight font-semibold md:text-[44px]">{t('See it working')}</h2>
             <p className="mx-auto mt-3 max-w-[56ch] text-lg text-white/80">
-              Sign in as a health volunteer, a doctor or a patient with the demo accounts. Turn the network off from the Sync
-              screen and keep working.
+              {t('Sign in as a health volunteer, a doctor or a patient with the demo accounts. Turn the network off from the Sync screen and keep working.')}
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button as={Link} to={cta.to} variant="accent" className="h-12 px-7 text-base">{cta.label}</Button>
-              {!session && <Button as={Link} to="/login?mode=signup" variant="glass" className="h-12 px-7 text-base">Create an account</Button>}
+              {!session && <Button as={Link} to="/login?mode=signup" variant="glass" className="h-12 px-7 text-base">{t('Create an account')}</Button>}
             </div>
           </div>
         </Reveal>
@@ -494,8 +489,8 @@ export function Home() {
       <footer className="border-t border-line bg-white">
         <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-4 px-5 py-8 text-sm text-ink-soft md:px-8">
           <img src="/favicon.svg" alt="" className="size-7" />
-          <span><b className="text-ink">RuralHealth Sync</b>. Final-semester Big Data project.</span>
-          <span className="md:ml-auto">Demo data is synthetic. Not for clinical use.</span>
+          <span><b className="text-ink">RuralHealth Sync</b>. {t('Final-semester Big Data project.')}</span>
+          <span className="md:ml-auto">{t('Demo data is synthetic. Not for clinical use.')}</span>
         </div>
       </footer>
     </div>

@@ -8,12 +8,16 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Button, cx } from '../components/ui.jsx';
+import { t, LanguageSwitcher } from '../i18n/index.jsx';
+
+// Translate plain text; leave numbers and readings ("120/80", "BP 140/90") untouched where there is no translation.
+const tr = (s) => (typeof s === 'string' ? t(s) : s);
 
 /* ------------------------------------------------------------------ drawing helpers */
 
 const C = { ink: '#12203a', soft: '#5a6b80', line: '#dce3ea', paper: '#f2f5f9', pine: '#0d7a68', mint: '#5fe0c0', mari: '#f2a93b', lali: '#d23a5f', sky: '#2f6fb0', white: '#ffffff' };
 const T = ({ x, y, children, size = 15, color = C.ink, weight = 600, anchor = 'middle' }) => (
-  <text x={x} y={y} fontSize={size} fill={color} fontWeight={weight} textAnchor={anchor} fontFamily="IBM Plex Sans, system-ui, sans-serif">{children}</text>
+  <text x={x} y={y} fontSize={size} fill={color} fontWeight={weight} textAnchor={anchor} fontFamily="IBM Plex Sans, IBM Plex Sans Devanagari, system-ui, sans-serif">{tr(children)}</text>
 );
 const Arrow = ({ d, color = C.pine, dashed }) => (
   <path d={d} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeDasharray={dashed ? '7 8' : undefined} markerEnd={`url(#arrow-${color.slice(1)})`} />
@@ -52,15 +56,15 @@ function Phone({ x, y, title, lines = [], tone = C.pine, off = false, scale = 1 
 function Figure({ children, caption, label }) {
   return (
     <figure className="my-8">
-      <p className="mb-2 text-xs text-ink-soft sm:hidden">Swipe sideways to see the whole picture →</p>
+      <p className="mb-2 text-xs text-ink-soft sm:hidden">{t('Swipe sideways to see the whole picture →')}</p>
       <div className="overflow-x-auto rounded-3xl border border-line bg-white p-3 shadow-sm sm:overflow-hidden sm:p-5">
         {/* On phones the picture keeps a readable size and scrolls sideways inside this box. */}
-        <svg viewBox="0 0 640 340" className="h-auto w-full min-w-[600px] sm:min-w-0" role="img" aria-label={label}>
+        <svg viewBox="0 0 640 340" className="h-auto w-full min-w-[600px] sm:min-w-0" role="img" aria-label={t(label)}>
           <Defs />
           {children}
         </svg>
       </div>
-      <figcaption className="mt-3 text-center text-sm text-ink-soft">{caption}</figcaption>
+      <figcaption className="mt-3 text-center text-sm text-ink-soft">{t(caption)}</figcaption>
     </figure>
   );
 }
@@ -468,24 +472,27 @@ export function ProblemDetail() {
       <header className="sticky top-0 z-40 bg-ink/95 shadow-lg backdrop-blur">
         <div className="mx-auto flex h-16 max-w-[1000px] items-center gap-3 px-4 text-white md:px-8">
           <Link to="/home#problem" className="inline-flex items-center gap-2 text-sm font-semibold text-white/85 no-underline hover:text-white">
-            <ArrowLeft size={17} /> <span className="hidden sm:inline">Back to home</span><span className="sm:hidden">Back</span>
+            <ArrowLeft size={17} /> <span className="hidden sm:inline">{t('Back to home')}</span><span className="sm:hidden">{t('Back')}</span>
           </Link>
           <span className="ml-1 hidden truncate font-condensed text-lg font-semibold sm:inline">RuralHealth Sync</span>
-          <Button as={Link} to={session ? '/' : '/login'} variant="accent" size="sm" className="ml-auto h-9 px-4">{session ? 'Open the app' : 'Sign in'}</Button>
+          <div className="ml-auto flex items-center gap-2">
+            <LanguageSwitcher tone="dark" />
+            <Button as={Link} to={session ? '/' : '/login'} variant="accent" size="sm" className="h-9 px-4">{session ? t('Open the app') : t('Sign in')}</Button>
+          </div>
         </div>
       </header>
 
       <section className="bg-brand text-white">
         <div className="mx-auto max-w-[1000px] px-4 py-12 md:px-8 md:py-16">
-          <p className="text-sm font-semibold tracking-wide text-mint uppercase">Problem {p.n} of 3</p>
+          <p className="text-sm font-semibold tracking-wide text-mint uppercase">{t('Problem {n} of 3', { n: p.n })}</p>
           <h1 className="mt-2 flex items-center gap-3 font-condensed text-[34px] leading-tight font-semibold md:text-[48px]">
             <span className="grid size-12 flex-none place-items-center rounded-2xl bg-white/10"><p.icon size={26} /></span>
-            {p.title}
+            {t(p.title)}
           </h1>
-          <p className="mt-4 max-w-[62ch] text-lg text-white/85">{p.summary}</p>
-          <nav aria-label="On this page" className="mt-6 flex flex-wrap gap-2 text-sm">
+          <p className="mt-4 max-w-[62ch] text-lg text-white/85">{t(p.summary)}</p>
+          <nav aria-label={t('On this page')} className="mt-6 flex flex-wrap gap-2 text-sm">
             {[['what', 'In simple words'], ['day', 'A day in the field'], ['why', 'Why apps fail'], ['solve', 'How we solve it'], ['try', 'Try it yourself'], ['words', 'Words to know']].map(([id, label]) => (
-              <a key={id} href={`#${id}`} className="rounded-full border border-white/20 px-3 py-1.5 text-white/85 no-underline hover:bg-white/10">{label}</a>
+              <a key={id} href={`#${id}`} className="rounded-full border border-white/20 px-3 py-1.5 text-white/85 no-underline hover:bg-white/10">{t(label)}</a>
             ))}
           </nav>
         </div>
@@ -493,22 +500,22 @@ export function ProblemDetail() {
 
       <main className="mx-auto max-w-[1000px] px-4 pb-20 md:px-8">
         <div id="what" className="scroll-mt-20">
-          <Section icon={BookOpen} title="The problem in simple words">
+          <Section icon={BookOpen} title={t('The problem in simple words')}>
             <div className="space-y-4 text-[17px] leading-relaxed text-ink-2">
-              {p.simple.map((t) => <p key={t.slice(0, 20)}>{t}</p>)}
+              {p.simple.map((txt) => <p key={txt.slice(0, 20)}>{t(txt)}</p>)}
             </div>
             <ProblemPic />
           </Section>
         </div>
 
         <div id="day" className="scroll-mt-20">
-          <Section icon={Clock} title="A day in the field" tone="bg-sky-wash text-sky">
+          <Section icon={Clock} title={t('A day in the field')} tone="bg-sky-wash text-sky">
             <ol className="relative ml-3 border-l-2 border-line">
               {p.day.map(([time, text]) => (
                 <li key={time} className="relative py-3 pl-7">
                   <span className="absolute top-[18px] -left-[9px] size-4 rounded-full border-2 border-sky bg-white" />
-                  <div className="text-sm font-semibold text-sky">{time}</div>
-                  <div className="text-[16px] text-ink">{text}</div>
+                  <div className="text-sm font-semibold text-sky">{t(time)}</div>
+                  <div className="text-[16px] text-ink">{t(text)}</div>
                 </li>
               ))}
             </ol>
@@ -516,20 +523,20 @@ export function ProblemDetail() {
         </div>
 
         <div id="why" className="scroll-mt-20">
-          <Section icon={XCircle} title="Why normal apps fail here" tone="bg-lali-wash text-lali">
+          <Section icon={XCircle} title={t('Why normal apps fail here')} tone="bg-lali-wash text-lali">
             <ul className="grid gap-3 md:grid-cols-2">
-              {p.fail.map((t) => (
-                <li key={t} className="flex gap-3 rounded-2xl border border-line bg-paper p-4 text-[15px]">
-                  <XCircle size={20} className="mt-0.5 flex-none text-lali" /> {t}
+              {p.fail.map((txt) => (
+                <li key={txt} className="flex gap-3 rounded-2xl border border-line bg-paper p-4 text-[15px]">
+                  <XCircle size={20} className="mt-0.5 flex-none text-lali" /> {t(txt)}
                 </li>
               ))}
             </ul>
-            <h3 className="mt-8 text-lg font-semibold">What can go wrong for patients</h3>
+            <h3 className="mt-8 text-lg font-semibold">{t('What can go wrong for patients')}</h3>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {p.risks.map(([title, text]) => (
                 <div key={title} className="rounded-2xl border border-[#f2c4ce] bg-lali-wash p-4">
-                  <div className="font-semibold text-lali-deep">{title}</div>
-                  <p className="mt-1 text-sm text-ink-2">{text}</p>
+                  <div className="font-semibold text-lali-deep">{t(title)}</div>
+                  <p className="mt-1 text-sm text-ink-2">{t(text)}</p>
                 </div>
               ))}
             </div>
@@ -537,14 +544,14 @@ export function ProblemDetail() {
         </div>
 
         <div id="solve" className="scroll-mt-20">
-          <Section icon={CheckCircle2} title="How RuralHealth Sync solves it">
+          <Section icon={CheckCircle2} title={t('How RuralHealth Sync solves it')}>
             <ol className="space-y-4">
               {p.solution.map(([title, text], i) => (
                 <li key={title} className="flex gap-4 rounded-2xl border border-line p-4 sm:p-5">
                   <span className="grid size-9 flex-none place-items-center rounded-full bg-pine font-semibold text-white">{i + 1}</span>
                   <div>
-                    <div className="text-[17px] font-semibold">{title}</div>
-                    <p className="mt-1 text-[15px] leading-relaxed text-ink-2">{text}</p>
+                    <div className="text-[17px] font-semibold">{t(title)}</div>
+                    <p className="mt-1 text-[15px] leading-relaxed text-ink-2">{t(text)}</p>
                   </div>
                 </li>
               ))}
@@ -554,28 +561,28 @@ export function ProblemDetail() {
         </div>
 
         <div id="try" className="scroll-mt-20">
-          <Section icon={PlayCircle} title="Try it yourself in the app" tone="bg-marigold-wash text-marigold-deep">
+          <Section icon={PlayCircle} title={t('Try it yourself in the app')} tone="bg-marigold-wash text-marigold-deep">
             <ol className="space-y-2.5">
-              {p.tryIt.map((t, i) => (
-                <li key={t} className="flex gap-3 text-[16px]">
-                  <span className="grid size-7 flex-none place-items-center rounded-full bg-marigold text-sm font-bold text-ink">{i + 1}</span>
-                  <span className="pt-0.5">{t}</span>
+              {p.tryIt.map((txt, i) => (
+                <li key={txt} className="flex gap-3 text-[16px]">
+                  <span className="grid size-7 flex-none place-items-center rounded-full bg-marigold text-sm font-bold text-ink">{t('{n}', { n: i + 1 })}</span>
+                  <span className="pt-0.5">{t(txt)}</span>
                 </li>
               ))}
             </ol>
             <div className="mt-5 flex flex-wrap gap-3">
-              <Button as={Link} to={session ? '/sync' : '/login'}><Smartphone size={17} /> {session ? 'Open Sync status' : 'Open the demo'}</Button>
+              <Button as={Link} to={session ? '/sync' : '/login'}><Smartphone size={17} /> {session ? t('Open Sync status') : t('Open the demo')}</Button>
             </div>
           </Section>
         </div>
 
         <div id="words" className="scroll-mt-20">
-          <Section icon={Lightbulb} title="Words to know" tone="bg-sky-wash text-sky">
+          <Section icon={Lightbulb} title={t('Words to know')} tone="bg-sky-wash text-sky">
             <dl className="grid gap-3 md:grid-cols-2">
               {p.words.map(([w, d]) => (
                 <div key={w} className="rounded-2xl border border-line p-4">
-                  <dt className="font-semibold">{w}</dt>
-                  <dd className="mt-1 text-[15px] text-ink-2">{d}</dd>
+                  <dt className="font-semibold">{t(w)}</dt>
+                  <dd className="mt-1 text-[15px] text-ink-2">{t(d)}</dd>
                 </div>
               ))}
             </dl>
@@ -583,17 +590,17 @@ export function ProblemDetail() {
         </div>
 
         <div className="mt-12 rounded-3xl bg-brand px-6 py-7 text-white md:px-8">
-          <div className="text-sm font-semibold tracking-wide text-mint uppercase">Remember in one line</div>
-          <p className="mt-2 font-condensed text-[22px] leading-snug font-semibold md:text-[26px]">{p.remember}</p>
+          <div className="text-sm font-semibold tracking-wide text-mint uppercase">{t('Remember in one line')}</div>
+          <p className="mt-2 font-condensed text-[22px] leading-snug font-semibold md:text-[26px]">{t(p.remember)}</p>
         </div>
 
-        <nav aria-label="Other problems" className="mt-10 grid gap-3 sm:grid-cols-2">
+        <nav aria-label={t('Other problems')} className="mt-10 grid gap-3 sm:grid-cols-2">
           {[[prev, 'Previous problem', ArrowLeft], [next, 'Next problem', ArrowRight]].map(([s, label, Icon]) => (
             <Link key={label} to={`/problems/${s}`} className="group flex items-center gap-3 rounded-2xl border border-line p-4 text-ink no-underline transition-colors hover:border-pine">
               {label.startsWith('Previous') && <Icon size={18} className="text-pine" />}
               <div className={cx('flex-1', label.startsWith('Next') && 'text-right')}>
-                <div className="text-xs text-ink-soft">{label}</div>
-                <div className="font-semibold">{PROBLEMS[s].title}</div>
+                <div className="text-xs text-ink-soft">{t(label)}</div>
+                <div className="font-semibold">{t(PROBLEMS[s].title)}</div>
               </div>
               {label.startsWith('Next') && <Icon size={18} className="text-pine transition-transform group-hover:translate-x-1" />}
             </Link>

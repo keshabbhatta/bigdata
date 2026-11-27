@@ -6,6 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { api, setToken } from '../services/api.js';
 import { db, clearLocalData } from '../offline/indexedDB.js';
 import { syncEngine } from '../offline/syncEngine.js';
+import { t } from '../i18n/index.jsx';
 
 const AuthContext = createContext(null);
 
@@ -20,7 +21,7 @@ export const ROLE_NAMES = { worker: 'Health volunteer', supervisor: 'Doctor / su
 function checkTab(user, tab) {
   if (!tab || ROLE_TABS[tab].roles.includes(user.role)) return;
   const right = Object.entries(ROLE_TABS).find(([, t]) => t.roles.includes(user.role));
-  throw new Error(`This is a ${ROLE_NAMES[user.role].toLowerCase()} account. Choose "${right?.[1].label}" above and sign in again.`);
+  throw new Error(t('This account is for: {role}. Choose "{tab}" above and sign in again.', { role: t(ROLE_NAMES[user.role]), tab: t(right?.[1].label) }));
 }
 const SESSION_KEY = 'rh.session';
 const credKey = (u) => `rh.cred.${u}`;
