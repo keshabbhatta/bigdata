@@ -7,6 +7,15 @@ export function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   registerSW({
     immediate: true,
+    // Look for a new version of the app every 30 minutes and whenever the page is opened
+    // again, so people see updates without clearing their browser. A new version
+    // takes over and reloads the page by itself (registerType: 'autoUpdate').
+    onRegisteredSW(_url, registration) {
+      if (!registration) return;
+      const check = () => { if (navigator.onLine) registration.update().catch(() => {}); };
+      setInterval(check, 30 * 60 * 1000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+    },
     onOfflineReady() {
       console.info('[pwa] App is ready to work offline');
     },

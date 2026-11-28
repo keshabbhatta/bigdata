@@ -1,7 +1,7 @@
 // Public home page: what the project is, who it is for and how it works,
 // illustrated with real photographs of health work in Nepal.
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   WifiOff, BatteryLow, Users, Smartphone, HardDrive, RefreshCw, GitMerge, Footprints, Stethoscope, HeartPulse,
   ShieldCheck, ArrowRight, CheckCircle2,
@@ -141,13 +141,20 @@ export function Home() {
   const cta = session ? { to: '/', label: t('Open the app') } : { to: '/login', label: t('Try the live demo') };
   useEffect(() => { document.title = 'Sewika (सेविका) – Health records that work without a signal'; }, []);
   useSectionScroll();
+  const navigate = useNavigate();
+  // The logo always brings you to the very top of the home page, wherever you are on it.
+  const toTop = (e) => {
+    e.preventDefault();
+    navigate('/home', { replace: true });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-full scroll-smooth bg-paper">
       {/* ---------- top bar ---------- */}
       <header className="sticky top-0 z-40 border-b border-line bg-paper/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-[1180px] items-center gap-3 px-4 sm:gap-6 md:px-8">
-          <Link to="/home" className="flex items-center gap-2.5 text-ink no-underline">
+          <Link to="/home" onClick={toTop} aria-label={t('Sewika home page')} className="flex items-center gap-2.5 text-ink no-underline">
             <img src="/favicon.svg" alt="" className="size-9 rounded-[10px]" />
             <span className="leading-none">
               <strong className="block font-serif text-[19px] font-semibold">Sewika</strong>
@@ -321,7 +328,7 @@ export function Home() {
       <footer className="border-t border-line bg-paper text-[15px]">
         <div className="mx-auto grid max-w-[1180px] gap-10 px-4 py-12 sm:grid-cols-2 md:px-8 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div>
-            <Link to="/home" className="flex items-center gap-2.5 text-ink no-underline">
+            <Link to="/home" onClick={toTop} aria-label={t('Sewika home page')} className="flex items-center gap-2.5 text-ink no-underline">
               <img src="/favicon.svg" alt="" className="size-9 rounded-[10px]" />
               <span className="leading-none"><strong className="block font-serif text-[19px] font-semibold">Sewika</strong><span className="mt-1 block text-[12px] leading-none text-pine">सेविका</span></span>
             </Link>
