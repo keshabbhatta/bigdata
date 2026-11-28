@@ -3,6 +3,25 @@ import os from 'node:os';
 
 const list = (v) => (v || '').split(',').map((s) => s.trim()).filter(Boolean);
 
+// Database addresses are often pasted with small mistakes from a provider's dashboard:
+// spaces or line breaks, surrounding quotes, or the whole psql command
+// (psql 'postgresql://...'). Keep only the postgres://... or postgresql://... part.
+export function cleanDbUrl(v) {
+  const s = String(v || '').replace(/\s+/g, '');
+  const m = s.match(/postgres(?:ql)?:\/\/[^'"]+/);
+  return m ? m[0] : s;
+}
+
+/** The address without the password, safe to print in logs. */
+export function describeDbUrl(url) {
+  try {
+    const u = new URL(url);
+    return `${u.hostname}:${u.port || 5432}${u.pathname}`;
+  } catch {
+    return url ? 'an address that is not a valid postgresql:// link' : '(not set)';
+  }
+}
+
 export const config = {
   port: Number(process.env.PORT) || 4000,
   instanceId: process.env.INSTANCE_ID || `api-${os.hostname()}`,
@@ -11,8 +30,8 @@ export const config = {
   corsOrigins: list(process.env.CORS_ORIGINS || '*'),
 
   db: {
-    primaryUrl: process.env.DATABASE_URL || 'postgres://ruralhealth:ruralhealth@localhost:5432/ruralhealth',
-    replicaUrl: process.env.DATABASE_REPLICA_URL || '',
+    primaryUrl: cleanDbUrl(process.env.DATABASE_URL) || 'postgres://ruralhealth:ruralhealth@localhost:5432/ruralhealth',
+    replicaUrl: cleanDbUrl(process.env.DATABASE_REPLICA_URL) || '',
     ssl: process.env.DATABASE_SSL === 'true',
   },
 

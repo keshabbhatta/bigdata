@@ -464,6 +464,7 @@ export function ProblemDetail() {
   const { session } = useAuth();
   const p = PROBLEMS[slug];
   useEffect(() => { window.scrollTo({ top: 0 }); }, [slug]);
+  useEffect(() => { if (p) document.title = `${t(p.title)} – Sewika`; }, [p]);
   if (!p) return <Navigate to="/home#problem" replace />;
 
   const idx = ORDER.indexOf(slug);

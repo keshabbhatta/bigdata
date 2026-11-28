@@ -4,9 +4,10 @@
 # back to the outbox table, live SQL analytics and local file storage.
 services:
   - type: web
-    name: ruralhealth-sync
+    name: sewika             # address: https://sewika.onrender.com (if the name is free)
     runtime: node
     plan: free
+    region: singapore        # closest Render region to Nepal
     buildCommand: cd frontend && npm ci && npm run build && cd ../backend && npm ci --omit=dev
     startCommand: cd backend && node src/server.js
     healthCheckPath: /api/health
@@ -22,4 +23,6 @@ services:
       - key: SEED_DEMO_DATA
         value: "true"
       - key: GOOGLE_CLIENT_ID
-        sync: false          # optional
+        sync: false          # optional: Continue with Google
+      - key: GOOGLE_SITE_VERIFICATION
+        sync: false          # optional: the code from Google Search Console (HTML tag method)

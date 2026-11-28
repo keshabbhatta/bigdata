@@ -8,8 +8,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Button, cx, useCountUp } from '../components/ui.jsx';
-import { Photo, Credit } from '../components/Photo.jsx';
-import { PHOTOS } from '../content/photos.js';
+import { Photo, Picture, Credit, Slideshow } from '../components/Photo.jsx';
+import { PHOTOS, HERO_SLIDES } from '../content/photos.js';
 import { t, num, LanguageSwitcher } from '../i18n/index.jsx';
 
 function usePhase(count, ms) {
@@ -193,6 +193,7 @@ export function Home() {
     }, 35);
     return () => clearInterval(timer);
   }, [tagline]);
+  useEffect(() => { document.title = 'Sewika (सेविका) – Health records that work without a signal'; }, []);
 
   return (
     <div className="min-h-full scroll-smooth bg-paper">
@@ -203,7 +204,7 @@ export function Home() {
             <img src="/favicon.svg" alt="" className="size-9 rounded-[10px]" />
             <span className="leading-none">
               <strong className="block font-serif text-[19px] font-semibold">Sewika</strong>
-              <span className="hidden text-[12px] text-pine sm:block">सेविका</span>
+              <span className="mt-1 hidden text-[12px] leading-none text-pine sm:block">सेविका</span>
             </span>
           </Link>
           <nav className="hidden items-center gap-5 text-[15px] md:flex" aria-label={t('Sections')}>
@@ -245,7 +246,7 @@ export function Home() {
             ))}
           </ul>
         </div>
-        <Photo photo={PHOTOS.fchv} eager imgClassName="aspect-[3/2] rounded-lg shadow-[0_18px_40px_-22px_rgba(28,38,56,.6)]" />
+        <Slideshow photos={HERO_SLIDES} interval={5000} imgClassName="rounded-lg shadow-[0_18px_40px_-22px_rgba(28,38,56,.6)]" />
       </section>
 
       {/* ---------- problem ---------- */}
@@ -356,7 +357,7 @@ export function Home() {
 
       {/* ---------- call to action ---------- */}
       <section className="relative overflow-hidden bg-ink text-white">
-        <img src={PHOTOS.terraces.src} alt={t(PHOTOS.terraces.alt)} loading="lazy" className="photo-float absolute inset-0 h-full w-full object-cover" />
+        <div className="absolute inset-0"><Picture photo={PHOTOS.terraces} sizes="100vw" className="h-full" /></div>
         <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-ink/90 via-ink/70 to-ink/20" />
         <div className="relative mx-auto max-w-[1180px] px-4 py-20 md:px-8 md:py-28">
           <h2 className="max-w-[18ch] font-serif text-[32px] leading-[1.15] font-semibold md:text-[44px]">{t('See it working')}</h2>
@@ -371,13 +372,44 @@ export function Home() {
         </div>
       </section>
 
-      <footer className="bg-paper">
-        <div className="mx-auto grid max-w-[1180px] gap-3 px-4 py-8 text-sm text-ink-soft md:grid-cols-[1fr_auto] md:px-8">
-          <span className="flex items-center gap-3">
-            <img src="/favicon.svg" alt="" className="size-7 rounded-md" />
-            <span><b className="font-serif text-ink">Sewika</b>. {t('Final-semester Big Data project.')} {t('Demo data is synthetic. Not for clinical use.')}</span>
-          </span>
-          <span className="md:text-right">{t('Photo credits and licenses are shown where required. The people shown are not users of this app.')}</span>
+      <footer className="border-t border-line bg-paper text-[15px]">
+        <div className="mx-auto grid max-w-[1180px] gap-10 px-4 py-12 sm:grid-cols-2 md:px-8 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div>
+            <Link to="/home" className="flex items-center gap-2.5 text-ink no-underline">
+              <img src="/favicon.svg" alt="" className="size-9 rounded-[10px]" />
+              <span className="leading-none"><strong className="block font-serif text-[19px] font-semibold">Sewika</strong><span className="mt-1 block text-[12px] leading-none text-pine">सेविका</span></span>
+            </Link>
+            <p className="mt-4 max-w-[34ch] text-ink-soft">{t('Health records that work without a signal, for the volunteers who look after mothers in Nepal’s villages.')}</p>
+          </div>
+          <nav aria-label={t('The project')}>
+            <h3 className="text-sm font-semibold text-ink">{t('The project')}</h3>
+            <ul className="mt-3 space-y-2">
+              {[['#problem', 'The problem'], ['#how', 'How it works'], ['#roles', 'Who uses it']].map(([href, l]) => (
+                <li key={href}><a href={href} className="text-ink-soft no-underline hover:text-ink hover:underline">{t(l)}</a></li>
+              ))}
+            </ul>
+          </nav>
+          <nav aria-label={t('The three problems')}>
+            <h3 className="text-sm font-semibold text-ink">{t('The three problems')}</h3>
+            <ul className="mt-3 space-y-2">
+              {PROBLEMS.map((p) => (
+                <li key={p.slug}><Link to={`/problems/${p.slug}`} className="text-ink-soft no-underline hover:text-ink hover:underline">{t(p.title)}</Link></li>
+              ))}
+            </ul>
+          </nav>
+          <nav aria-label={t('Use the app')}>
+            <h3 className="text-sm font-semibold text-ink">{t('Use the app')}</h3>
+            <ul className="mt-3 space-y-2">
+              <li><Link to={cta.to} className="text-ink-soft no-underline hover:text-ink hover:underline">{session ? t('Open the app') : t('Sign in')}</Link></li>
+              {!session && <li><Link to="/login?mode=signup" className="text-ink-soft no-underline hover:text-ink hover:underline">{t('Create an account')}</Link></li>}
+            </ul>
+          </nav>
+        </div>
+        <div className="border-t border-line">
+          <div className="mx-auto flex max-w-[1180px] flex-col gap-2 px-4 py-5 text-[13px] text-ink-soft md:flex-row md:justify-between md:px-8">
+            <span>© {num('2026')} Sewika. {t('Final-semester Big Data project.')} {t('Demo data is synthetic. Not for clinical use.')}</span>
+            <span>{t('Photos from Wikimedia Commons, credited under each photo. The people shown are not users of this app.')}</span>
+          </div>
         </div>
       </footer>
     </div>

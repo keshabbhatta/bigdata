@@ -2,6 +2,13 @@
 
 **Design and Implementation of a Local-First Distributed Big Data Platform for Rural Community Health Records under Intermittent Connectivity**
 
+### 🌐 Live app: **[sewika.onrender.com](https://sewika.onrender.com)**
+
+Opens on any phone or computer. On Android, open it in Chrome and choose **⋮ → Add to Home screen** to install it.
+
+To try it, open the sign-in page and tap one of the demo accounts shown there, or create your own account.
+Demo data is synthetic. The free server sleeps when unused, so the first visit can take up to a minute.
+
 Female Community Health Volunteers in rural Nepal, Lady Health Workers in Pakistan and
 rural clinic staff in Bangladesh and Sri Lanka often work with 2G/3G coverage that comes
 and goes, or with no power for days. Cloud-only health record systems stop working when

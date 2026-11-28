@@ -4,13 +4,47 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#17325a" />
-    <meta name="description" content="Offline-first community and maternal health records for health workers." />
+    <title>Sewika (सेविका) – Health records that work without a signal</title>
+    <meta name="description" content="Sewika is an offline-first health record app for Nepal's female community health volunteers (FCHVs). Record mothers, pregnancies and visits with no internet; it syncs safely when a signal appears." />
+    <meta name="keywords" content="Sewika, सेविका, FCHV, female community health volunteer, Nepal, maternal health, offline health records, स्वास्थ्य स्वयंसेविका" />
+    <meta name="application-name" content="Sewika" />
+    <meta name="apple-mobile-web-app-title" content="Sewika" />
+    <!-- Google Search Console ownership check for https://sewika.onrender.com (keep it). -->
+    <meta name="google-site-verification" content="jxJRjZy8ogpEHDiCiLUOko9wgnK14aWCag2cwmKWTtU" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-    <title>Sewika</title>
+
+    <!-- How the link looks when shared on WhatsApp, Facebook, Viber, etc. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sewika" />
+    <meta property="og:title" content="Sewika (सेविका) – Health records that work without a signal" />
+    <meta property="og:description" content="Offline-first health records for Nepal's female community health volunteers. Nothing is lost when the signal drops." />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Tells search engines what this site is called. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Sewika",
+        "alternateName": ["सेविका", "Sewika health records"],
+        "description": "Offline-first health record app for Nepal's female community health volunteers (FCHVs).",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "Android, iOS, Windows, macOS",
+        "inLanguage": ["en", "ne"],
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "NPR" }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>Sewika (सेविका)</h1>
+      <p>Health records that work without a signal, for Nepal's female community health volunteers. Please turn on JavaScript to use the app.</p>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
