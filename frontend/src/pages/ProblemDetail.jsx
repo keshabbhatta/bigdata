@@ -479,7 +479,10 @@ export function ProblemDetail() {
           <Link to="/home#problem" className="inline-flex items-center gap-2 text-sm font-semibold text-white/85 no-underline hover:text-white">
             <ArrowLeft size={17} /> <span className="hidden sm:inline">{t('Back to home')}</span><span className="sm:hidden">{t('Back')}</span>
           </Link>
-          <span className="ml-1 hidden truncate font-condensed text-lg font-semibold sm:inline">Sewika</span>
+          <Link to="/home" className="ml-1 flex items-center gap-2 text-white no-underline hover:opacity-90" aria-label={t('Sewika home page')}>
+            <img src="/favicon.svg" alt="" className="size-8 rounded-[9px]" />
+            <span className="hidden font-serif text-lg font-semibold sm:inline">Sewika</span>
+          </Link>
           <div className="ml-auto flex items-center gap-2">
             <LanguageSwitcher tone="dark" />
             <Button as={Link} to={session ? '/' : '/login'} variant="accent" size="sm" className="h-9 px-4">{session ? t('Open the app') : t('Sign in')}</Button>

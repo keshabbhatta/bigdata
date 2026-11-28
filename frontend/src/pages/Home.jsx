@@ -1,7 +1,7 @@
 // Public home page: what the project is, who it is for and how it works,
 // illustrated with real photographs of health work in Nepal.
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import {
   WifiOff, BatteryLow, Users, Smartphone, HardDrive, RefreshCw, GitMerge, Footprints, Stethoscope, HeartPulse,
   ShieldCheck, ArrowRight, CheckCircle2,
@@ -112,10 +112,35 @@ const ROLES = [
   { icon: ShieldCheck, title: 'Administrator', bar: 'border-marigold', ic: 'text-marigold-deep', points: ['Users, roles and wards', 'Approve new accounts', 'Backups of all records'] },
 ];
 
+/**
+ * Scrolls to the section named in the address (/home#how) every time a link is used,
+ * also when coming back from another page, and to the top for a plain /home link
+ * (for example the Sewika logo).
+ */
+function useSectionScroll() {
+  const { hash, key } = useLocation();
+  useEffect(() => {
+    let tries = 0;
+    let frame;
+    const go = () => {
+      if (!hash) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+      const el = document.getElementById(decodeURIComponent(hash.slice(1)));
+      if (el) {
+        const bar = document.querySelector('header')?.offsetHeight || 64; // height of the top bar
+        const top = el.getBoundingClientRect().top + window.scrollY - bar;
+        window.scrollTo({ top, behavior: 'smooth' });
+      } else if (tries++ < 30) frame = requestAnimationFrame(go); // the page may still be drawing
+    };
+    frame = requestAnimationFrame(go);
+    return () => cancelAnimationFrame(frame);
+  }, [hash, key]);
+}
+
 export function Home() {
   const { session } = useAuth();
   const cta = session ? { to: '/', label: t('Open the app') } : { to: '/login', label: t('Try the live demo') };
   useEffect(() => { document.title = 'Sewika (सेविका) – Health records that work without a signal'; }, []);
+  useSectionScroll();
 
   return (
     <div className="min-h-full scroll-smooth bg-paper">
@@ -131,7 +156,7 @@ export function Home() {
           </Link>
           <nav className="hidden items-center gap-5 text-[15px] md:flex" aria-label={t('Sections')}>
             {[['#problem', 'The problem'], ['#how', 'How it works'], ['#roles', 'Who uses it']].map(([href, l]) => (
-              <a key={href} href={href} className="text-ink-soft no-underline hover:text-ink hover:underline hover:underline-offset-4">{t(l)}</a>
+              <Link key={href} to={`/home${href}`} className="text-ink-soft no-underline hover:text-ink hover:underline hover:underline-offset-4">{t(l)}</Link>
             ))}
           </nav>
           <div className="ml-auto flex items-center gap-2">
@@ -140,6 +165,11 @@ export function Home() {
             <Button as={Link} to={cta.to} size="sm" className="h-9 px-4">{session ? t('Open the app') : t('Sign in')}</Button>
           </div>
         </div>
+        <nav className="scrollbar-none flex gap-1 overflow-x-auto border-t border-line px-3 py-1.5 text-[14px] md:hidden" aria-label={t('Sections')}>
+          {[['#problem', 'The problem'], ['#how', 'How it works'], ['#roles', 'Who uses it']].map(([href, l]) => (
+            <Link key={href} to={`/home${href}`} className="flex-none rounded-full px-3 py-1.5 font-medium whitespace-nowrap text-ink-2 no-underline active:bg-line-soft">{t(l)}</Link>
+          ))}
+        </nav>
       </header>
 
       {/* ---------- hero ---------- */}
@@ -154,7 +184,7 @@ export function Home() {
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <Button as={Link} to={cta.to} className="h-12 px-6 text-base">{cta.label} <ArrowRight size={18} /></Button>
-            <Button as="a" href="#how" variant="ghost" className="h-12 px-6 text-base">{t('How it works')}</Button>
+            <Button as={Link} to="/home#how" variant="ghost" className="h-12 px-6 text-base">{t('How it works')}</Button>
           </div>
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[15px] text-ink-2">
             {['Works fully offline', 'Syncs on weak 2G', 'Installs like an app'].map((txt) => (
@@ -301,7 +331,7 @@ export function Home() {
             <h3 className="text-sm font-semibold text-ink">{t('The project')}</h3>
             <ul className="mt-3 space-y-2">
               {[['#problem', 'The problem'], ['#how', 'How it works'], ['#roles', 'Who uses it']].map(([href, l]) => (
-                <li key={href}><a href={href} className="text-ink-soft no-underline hover:text-ink hover:underline">{t(l)}</a></li>
+                <li key={href}><Link to={`/home${href}`} className="text-ink-soft no-underline hover:text-ink hover:underline">{t(l)}</Link></li>
               ))}
             </ul>
           </nav>

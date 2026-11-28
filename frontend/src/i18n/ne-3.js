@@ -490,4 +490,5 @@ export default {
   "A blood pressure check for an older woman at Batulechaur Health Post, Pokhara.": "बाटुलेचौर स्वास्थ्य चौकी, पोखरामा वृद्ध महिलाको रक्तचाप जाँच।",
   "A baby receives polio vaccine drops in the mouth.": "बच्चाको मुखमा पोलियो खोपको थोपा दिइँदै।",
   "Polio drops during routine vaccination in Pokhara.": "पोखरामा नियमित खोपका क्रममा पोलियो थोपा।",
+  "Sewika home page": "सेविकाको गृहपृष्ठ",
 };
